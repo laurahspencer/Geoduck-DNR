@@ -1,0 +1,23 @@
+% WARNING - This is exported REVIGO data useful only for the specific purpose of constructing a TreeMap visualization.
+% Do not use this table as a general list of non-redundant GO categories, as it sets an extremely permissive 
+% threshold to detect redundancies (c=0.10) and fill the 'representative' column, while normally c>=0.4 is recommended.
+% To export a reduced-redundancy set of GO terms, go to the Scatterplot & Table tab, and export to CSV from there.
+term_ID,description,frequencyInDb,uniqueness,dispensability,representative
+GO:0005576,"extracellular region",4.572%,0.907,0.000,"extracellular region"
+GO:0045177,"apical part of cell",0.035%,0.868,0.000,"apical part of cell"
+GO:0016600,"flotillin complex",0.001%,0.710,0.016,"flotillin complex"
+GO:0030137,"COPI-coated vesicle",0.015%,0.404,0.669,"flotillin complex"
+GO:0010008,"endosome membrane",0.021%,0.399,0.686,"flotillin complex"
+GO:0005784,"Sec61 translocon complex",0.001%,0.436,0.482,"flotillin complex"
+GO:0005794,"Golgi apparatus",0.265%,0.418,0.574,"flotillin complex"
+GO:0005829,"cytosol",0.807%,0.644,0.025,"cytosol"
+GO:0030018,"Z disc",0.011%,0.551,0.284,"cytosol"
+GO:0005930,"axoneme",0.014%,0.562,0.252,"cytosol"
+GO:0000805,"X chromosome",0.001%,0.643,0.056,"X chromosome"
+GO:0033698,"Rpd3L complex",0.000%,0.590,0.354,"X chromosome"
+GO:0015629,"actin cytoskeleton",0.151%,0.511,0.309,"X chromosome"
+GO:0030479,"actin cortical patch",0.003%,0.487,0.581,"X chromosome"
+GO:0005737,"cytoplasm",38.159%,0.775,0.206,"X chromosome"
+GO:0005634,"nucleus",2.809%,0.519,0.202,"X chromosome"
+GO:0008290,"F-actin capping protein complex",0.007%,0.481,0.651,"X chromosome"
+GO:0016021,"integral component of membrane",35.230%,0.891,0.095,"integral component of membrane"
