@@ -67,8 +67,8 @@ noquote(GeoID.b) # remove quotes from resulting protein ID
     
     ### UPLOAD ANNOTATED GEODUCK PROTEOME FROM URL ###
     GeoduckAnnotations <- read.table(
-  "https://raw.githubusercontent.com/sr320/paper-pano-go/master/data-results/Geo-v3-join-uniprot-all0916-condensed.tab",
-  sep="\t", header=TRUE, fill=TRUE, stringsAsFactors = FALSE, quote="") #fill=TRUE for empty spaces 
+        "https://raw.githubusercontent.com/sr320/paper-pano-go/master/data-results/Geo-v3-join-uniprot-all0916-condensed.tab",
+        sep="\t", header=TRUE, fill=TRUE, stringsAsFactors = FALSE, quote="") #fill=TRUE for empty spaces 
     nrow(GeoduckAnnotations) # check that the # rows matches the source (I know this from uploading to Galaxy; not sure how else to do it)
     ncol(GeoduckAnnotations) # check that the # columns matches the source
     head(GeoduckAnnotations) # inspect; although it's easier to "view" in RStudio
