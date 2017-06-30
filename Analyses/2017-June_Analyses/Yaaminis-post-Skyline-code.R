@@ -26,6 +26,33 @@ eelgrassPortGamble <- ave(NormProtAreaAgg$PG.E.1, NormProtAreaAgg$PG.E.2)
 NormProtAreaAggAveraged <- data.frame(NormProtAreaAgg$Protein.Name, bareCaseInlet, bareFidalgoBay, barePortGamble, bareSkokomishRiver, bareWillapaBay, eelgrassCaseInlet, eelgrassFidalgoBay, eelgrassPortGamble, eelgrassSkokomishRiver) # combine site/treatment vectors into new dataframe
 head(NormProtAreaAggAveraged)
 
+### EDITING GEOID NAME TO MATCH ANNOTATED FILE ### 
+NormProtAreaAggAveragedGeoID <- NormProtAreaAggAveraged # copy database, create new one to be used to join to annotated file
+GeoID.a <- (gsub("cds.", "", NormProtAreaAggAveragedGeoID$NormProtAreaAgg.Protein.Name, fixed=TRUE)) # remove cds. from protein ID
+GeoID.b <- (gsub("\\|m.*", "", GeoID.a)) # remove |m.#### from protein ID
+noquote(GeoID.b) # remove quotes from resulting protein ID
+NormProtAreaAggAveragedGeoID[1] <- GeoID.b # replace the newly created vector of protein ID's in the full database
+head(NormProtAreaAggAveragedGeoID) # confirm changes
+nrow(NormProtAreaAggAveragedGeoID) # confirm # rows still same
+write.table(NormProtAreaAggAveragedGeoID, "2017-06-30_All-Proteins.tab", quote=F, row.names = F, sep="\t")
+?write.table
+
+#### MERGE WITH GO TERMS ####
+
+### UPLOAD ANNOTATED GEODUCK PROTEOME FROM URL ###
+GeoduckAnnotations <- read.table(
+  "https://raw.githubusercontent.com/sr320/paper-pano-go/master/data-results/Geo-v3-join-uniprot-all0916-condensed.tab",
+  sep="\t", header=TRUE, fill=TRUE, stringsAsFactors = FALSE, quote="") #fill=TRUE for empty spaces 
+nrow(GeoduckAnnotations) # check that the # rows matches the source (I know this from uploading to Galaxy; not sure how else to do it)
+ncol(GeoduckAnnotations) # check that the # columns matches the source
+head(GeoduckAnnotations) # inspect; although it's easier to "view" in RStudio
+
+# MERGE ANNOTATIONS WITH ALL MY PROTEINS ### 
+AnnotatedProteins <- merge(x = NormProtAreaAggAveragedGeoID, y = GeoduckAnnotations, by.x="NormProtAreaAgg.Protein.Name", by.y="GeoID")
+head(AnnotatedProteins) #confirm merge
+nrow(AnnotatedProteins)
+write.table(AnnotatedProteins, "2017-06-30_All-Annotated-Proteins.csv")
+
 #### CREATE NMDS PLOT ####
 
 #Load the source file for the biostats package
@@ -37,6 +64,8 @@ library(vegan)
 area.protID2 <- NormProtAreaAggAveraged[-1]
 rownames(area.protID2) <- NormProtAreaAggAveraged[,1]
 head(area.protID2)
+write.csv(area.protID2, file="2017-06-30_NormProtAreaAgg&Ave.csv")
+
 
 #Transpose the file so that rows and columns are switched and normalized by log(x+1)
 nrow(NormProtAreaAggAveraged)
@@ -100,20 +129,12 @@ nrow(ProtMeans)
 ncol(ProtVariance)
 nrow(ProtVariance)
 
-#### MERGE WITH GO TERMS ####
 
-#Upload table with proteins and accession codes.
+### Boneyard script ### 
+
 proteinAccessionCodes <- read.table(file = "background-proteome-accession.txt", header = FALSE, col.names = c("averageAreaAdjusted.proteins", "accession", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12"))
 proteinAccessionCodes <- within(proteinAccessionCodes, rm("V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12")) #Removing the extra columns
 names(proteinAccessionCodes) <- c("averageProteinAreas.protein", "accession")
 head(proteinAccessionCodes) #View uploaded data and confirm changes
 head(averageProteinAreasMerged)
 
-#Merge Skyline output with Uniprot information
-skylineProteinAccession <- merge(x = averageProteinAreasMerged, y = proteinAccessionCodes, by = "averageProteinAreas.protein")
-head(skylineProteinAccession) #confirm merge
-
-#### WRITE OUT MERGED TABLE ####
-
-#Write out alltreatments_DEG_Uniprot as a tab file. Remove row and column names using "row.names" and "col.names" arguments
-write.table(skylineProteinAccession, "2017-06-13-Skyline-ProteinAccession-nohead.txt", col.names = F, row.names = F)
