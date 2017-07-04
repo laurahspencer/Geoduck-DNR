@@ -134,6 +134,7 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
         #gamble=magenta
         
 ![draw nmds box](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_10.png?raw=true)
+        
         points(fig.nmds, 'sites', col=c('red', 'blue', 'black', 'green', 'magenta','red', 'blue', 'black', 'green', 'magenta'), pch=c(rep(16,5), rep(17,5)))
         legend(0.185,0.1, pch=c(rep(16,5), 1, 2), legend=c('Case Inlet', "Fidalgo Bay", "Willapa Bay", "Skokomish", "Port Gamble", "Bare", "Eelgrass"), col=c('red', 'blue', 'black', 'green', 'magenta', 'black', 'black'))
 
