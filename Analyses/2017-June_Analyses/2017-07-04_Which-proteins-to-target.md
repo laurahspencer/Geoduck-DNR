@@ -6,7 +6,7 @@
     * Acetyl-coenzyme A synthetase 2-like, mitochondrial (EC 6.2.1.1) (Acetate--CoA ligase 2) (Acetyl-CoA synthetase 2) (AceCS2) (Acyl-CoA synthetase short-chain family member 1); Q99NB1; Important for maintaining normal body temperature during fasting and for energy homeostasis. Essential for energy expenditure under ketogenic conditions. Converts acetate to acetyl-CoA so that it can be used for oxidation through the tricarboxylic cycle to produce ATP and CO2       
 * **pH regulation**
     * Sodium-driven chloride bicarbonate exchanger (Solute carrier family 4 member 10); Q5DTL9; Electrogenic sodium/bicarbonate cotransporter in exchange for intracellular chloride. Plays an important role in regulating intracellular pH       
-* Response to high or low oxygen
+* **Response to high or low oxygen**  
     * Hemoglobin-3 (Hemoglobin III) (Hb III); P41262; "This molluscan globin lacks one of the heme-binding histidine residues found in most other globins."       
     * Cytochrome b5 domain-containing protein 1; heme axial ligand    Q567I9    
     * Globin; P02207; The globins are a superfamily of heme-containing globular proteins, involved in binding and/or transporting oxygen. These proteins all incorporate the globin fold, a series of eight alpha helical segments. Two prominent members include myoglobin and hemoglobin."      
