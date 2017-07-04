@@ -2,6 +2,7 @@
 
 #### Step 1: Export report from Skyline
 
+_screen shots TBD_
 
 #### Step 2: Add site/treatment to columns, remove #N/A, and normalize based on Total Ion Current
 
