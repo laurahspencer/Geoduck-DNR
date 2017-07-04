@@ -53,7 +53,7 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
     eelgrassPortGamble <- ave(NormProtAreaAgg$PG.E.1, NormProtAreaAgg$PG.E.2)
 
     NormProtAreaAggAveraged <- data.frame(NormProtAreaAgg$Protein.Name, bareCaseInlet, bareFidalgoBay, barePortGamble, bareSkokomishRiver,    bareWillapaBay, eelgrassCaseInlet, eelgrassFidalgoBay, eelgrassPortGamble, eelgrassSkokomishRiver) # combine site/treatment vectors into    new dataframe
-   head(NormProtAreaAggAveraged)
+    head(NormProtAreaAggAveraged)
     
 ![ave data](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_3.png?raw=true)
 
