@@ -64,7 +64,7 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
     NormProtAreaAggAveragedGeoID <- NormProtAreaAggAveraged # copy database, create new one to be used to join to annotated file
     GeoID.a <- (gsub("cds.", "", NormProtAreaAggAveragedGeoID$NormProtAreaAgg.Protein.Name, fixed=TRUE)) # remove cds. from protein ID
     GeoID.b <- (gsub("\\|m.*", "", GeoID.a)) # remove |m.#### from protein ID
-noquote(GeoID.b) # remove quotes from resulting protein ID
+    noquote(GeoID.b) # remove quotes from resulting protein ID
     NormProtAreaAggAveragedGeoID[1] <- GeoID.b # replace the newly created vector of protein ID's in the full database
     head(NormProtAreaAggAveragedGeoID) # confirm changes
     nrow(NormProtAreaAggAveragedGeoID) # confirm # rows still same
