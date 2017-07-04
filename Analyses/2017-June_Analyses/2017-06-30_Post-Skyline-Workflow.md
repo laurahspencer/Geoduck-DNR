@@ -1,4 +1,5 @@
 ### In this workflow I process Skyline data to assess proteins expressed in Geoduck during outplant in 5 sites throughout Puget Sound in 2 treatments: eelgrass, and bare (no eelgrass).
+Pertinent files for ths process: [R code](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Yaaminis-post-Skyline-code.R), [Biostats.R](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/BioStats.R)
 
 #### Step 1: Export report from Skyline
 
