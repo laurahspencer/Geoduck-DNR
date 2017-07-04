@@ -24,6 +24,8 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
     setwd("~/Documents/Roberts Lab/Geoduck-DNR/Analyses/2017-June_Analyses")
     NormProtArea <- read.csv("2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv", header=TRUE, na.strings = "0") # import local file
     head(NormProtArea)
+
+![imported data](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_1.png?raw=true)
     
 #### Step 4: Aggregate transition area by protein. Data currently represents the area under the curve for each transition. To find the total area per protein I use the `aggregate()` function to sum all transition areas by protein.
     
@@ -33,6 +35,8 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
     NormProtAreaAgg <- aggregate(cbind(FB.E.1, CI.E.1, PG.B.1, SK.E.1, FB.B.1, WB.B.1, SK.B.1, CI.B.1, PG.E.1, WB.B.2, PG.E.2, FB.E.2, FB.B.2, CI.B.2, SK.E.2, PG.B.2, SK.B.2, CI.E.2) ~ Protein.Name, FUN = sum, data = NormProtArea, na.rm = TRUE, na.action = NULL)
     head(NormProtAreaAgg) #confirming that proteins are now summed
     
+![agg data](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_2.png?raw=true)
+
 #### Step 5: Average technical replicates. Each sample ran through the MS/MS twice; here I calculate the average for each treatment/site combo:
 
     #### AVERAGE REPLICATES #### 
@@ -51,6 +55,9 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
     NormProtAreaAggAveraged <- data.frame(NormProtAreaAgg$Protein.Name, bareCaseInlet, bareFidalgoBay, barePortGamble, bareSkokomishRiver,    bareWillapaBay, eelgrassCaseInlet, eelgrassFidalgoBay, eelgrassPortGamble, eelgrassSkokomishRiver) # combine site/treatment vectors into    new dataframe
    head(NormProtAreaAggAveraged)
     
+![ave data](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_3.png?raw=true)
+
+
 #### Step 6: Prep file to merge with annotations. The Protein ID in my Skyline files are formatted differently from the GeoID in my annotation file. Here I edit out the extra string (in bold), **cds.**comp100047_c0_seq1**|m.5980** 
 
     ### EDITING GEOID NAME TO MATCH ANNOTATED FILE ### 
@@ -62,7 +69,9 @@ noquote(GeoID.b) # remove quotes from resulting protein ID
     head(NormProtAreaAggAveragedGeoID) # confirm changes
     nrow(NormProtAreaAggAveragedGeoID) # confirm # rows still same
     write.table(NormProtAreaAggAveragedGeoID, "2017-06-30_All-Proteins.tab", quote=F, row.names = F, sep="\t") # Save to file
-    
+   
+![edit id](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_4.png?raw=true)
+
 #### Step 7: Upload annotations. This file is the annotated proteins found via geoduck gonad transcriptome.
     
     ### UPLOAD ANNOTATED GEODUCK PROTEOME FROM URL ###
@@ -73,6 +82,8 @@ noquote(GeoID.b) # remove quotes from resulting protein ID
     ncol(GeoduckAnnotations) # check that the # columns matches the source
     head(GeoduckAnnotations) # inspect; although it's easier to "view" in RStudio
 
+![geo annotations file](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_6.png?raw=true)
+
 #### Step 8: Merge the 8076 total proteins found in my samples with the annotations. After merge, there are 5,690 annotated proteins in my data. Annotated file is [2017-06-30_All-Annotated-Proteins.tab](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/2017-06-30_All-Annotated-Proteins.tab)
 
     # MERGE ANNOTATIONS WITH ALL MY PROTEINS ### 
@@ -81,6 +92,92 @@ noquote(GeoID.b) # remove quotes from resulting protein ID
     nrow(AnnotatedProteins) #count number of proteins that were matched with the list of annotations
     write.table(AnnotatedProteins, "2017-06-30_All-Annotated-Proteins.tab", quote=F, row.names = F, sep="\t") #write out .tab file
     
-#### Step 9: TB Continued....
- 
-  
+![merged annotation](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_7.png?raw=true)
+    
+#### Step 9: Make NMDS plot to assess overall site relatedness. Again, thanks to Yaamini for providing me the code! Note: I saved the [biostats.R](https://www.umass.edu/landeco/teaching/ecodata/labs/biostats.R) code as an R script in my repo/working directory
+
+        #### CREATE NMDS PLOT ####
+
+        #Load the source file for the biostats package
+
+        source("biostats.R") #Either load the source R script or copy paste. Must run this code before NMDS.
+        library(vegan)
+
+        #Make sure first column of protein names is recognized as row names instead of values - this takes the first column containin protein names, and assigns it to the row "header" names 
+        area.protID <- NormProtAreaAggAveraged[-1]
+        rownames(area.protID) <- NormProtAreaAggAveraged[,1]
+        head(area.protID)
+        write.csv(area.protID, file="2017-07-04_NormProtAreaAgg&Ave.csv") #write this file out for safe keeping 
+
+![nmds](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_8.png?raw=true)
+
+        #Transpose the file so that rows and columns are switched 
+        area.protID.t <- t(area.protID[,1:9])
+        nrow(NormProtAreaAggAveraged) # Compare row and column lengths before and after transposing
+        ncol(NormProtAreaAggAveraged) 
+        nrow(area.protID.t)
+        ncol(area.protID.t)
+
+        #Make MDS dissimilarity matrix
+        proc.nmds <- metaMDS(area.protID.t, distance = 'bray', k = 2, trymax = 100, autotransform = FALSE)
+
+![draw nmds box](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_9.png?raw=true)        
+
+        #Make figure
+        fig.nmds <- ordiplot(proc.nmds, choices=c(1,2), type='none', display='sites', xlab='Axis 1', ylab='Axis 2', cex=1)
+        #bare=circle
+        #eelgrass=triangle
+        #case=red
+        #fidalgo=blue
+        #willapa=black
+        #skokomish=green
+        #gamble=magenta
+        
+![draw nmds box](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_10.png?raw=true)
+        points(fig.nmds, 'sites', col=c('red', 'blue', 'black', 'green', 'magenta','red', 'blue', 'black', 'green', 'magenta'), pch=c(rep(16,5), rep(17,5)))
+        legend(0.185,0.1, pch=c(rep(16,5), 1, 2), legend=c('Case Inlet', "Fidalgo Bay", "Willapa Bay", "Skokomish", "Port Gamble", "Bare", "Eelgrass"), col=c('red', 'blue', 'black', 'green', 'magenta', 'black', 'black'))
+
+![apply points](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_11.png?raw=true)
+![NMDS plot](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/2017-07-04_NMDS-plot.img.png?raw=true)
+
+#### FULL HEATMAP ####
+
+        #Install package
+        install.packages("pheatmap")
+        library(pheatmap)
+
+        #Data should be log(x) or log(x+1) transformed for this analysis. I thus invert my data (since I had normalized by TIC so values were <1), then log transform.
+
+        #Invert data then log transformation for heat map
+        area.protID.t.inv <- (1/area.protID.t)
+        is.na(area.protID.t.inv) <- sapply(area.protID.t.inv, is.infinite) # change "Inf" to "NA"
+        area.protID.t.inv.log <- data.trans(area.protID.t.inv, method = 'log', plot = FALSE)
+        ncol(area.protID.t.inv.log)
+        nrow(area.protID.t.inv.log)
+
+        #Create heatmap
+        pheatmap(area.protID.t.inv.log, cluster_rows = T, cluster_cols = T, clustering_distance_rows = 'euclidean', clustering_distance_cols = 'euclidean', clustering_method = 'median', show_rownames = T, show_colnames = F)
+
+![heatmap](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/Snip20170704_12.png?raw=true)
+
+        #Export preliminary heatmap as a .png
+        png(filename = "2017-07-04_Heatmap-by-median.png")
+        pheatmap(area2.tra2, cluster_rows = T, cluster_cols = T, clustering_distance_rows = 'euclidean', clustering_distance_cols = 'euclidean', clustering_method = 'median', show_rownames = T, show_colnames = F)
+        dev.off()
+        
+![heatmap image](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/2017-07-04_Heatmap-by-median.png?raw=true)        
+
+#### Step 11: Calculate coefficients of variances & means, and plot. I did this to visualize how variable the proteins are- plot TBD
+
+        ### Find COEFFICIENT OF VARIANCES & MEANS ###
+
+        ProtVariance <- c(var(area2.tra2[-1], area2.tra2[1], na.rm=TRUE))
+        ProtMeans <- c(colMeans(area2.tra2[-1], na.rm=TRUE))
+        ProtVar.Means <- data.frame(,y)
+        ProtVar.Means <- data.frame(NormProtAreaAggAveraged[1], ProtMeans, ProtVariance)
+        
+        nrow(NormProtAreaAggAveraged[1])
+        length(ProtMeans)
+        length(ProtVariance)
+        head(ProtMeans)
+        ncol(ProtMeans)
