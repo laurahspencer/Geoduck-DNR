@@ -34,10 +34,7 @@ noquote(GeoID.b) # remove quotes from resulting protein ID
 NormProtAreaAggAveragedGeoID[1] <- GeoID.b # replace the newly created vector of protein ID's in the full database
 head(NormProtAreaAggAveragedGeoID) # confirm changes
 nrow(NormProtAreaAggAveragedGeoID) # confirm # rows still same
-write.table(NormProtAreaAggAveragedGeoID, "2017-06-30_All-Proteins.tab", quote=F, row.names = F, sep="\t")
-?write.table
-
-#### MERGE WITH GO TERMS ####
+write.table(NormProtAreaAggAveragedGeoID, "2017-06-30_All-Proteins.tab", quote=F, row.names = F, sep="\t") # Save to file
 
 ### UPLOAD ANNOTATED GEODUCK PROTEOME FROM URL ###
 GeoduckAnnotations <- read.table(
@@ -50,8 +47,8 @@ head(GeoduckAnnotations) # inspect; although it's easier to "view" in RStudio
 # MERGE ANNOTATIONS WITH ALL MY PROTEINS ### 
 AnnotatedProteins <- merge(x = NormProtAreaAggAveragedGeoID, y = GeoduckAnnotations, by.x="NormProtAreaAgg.Protein.Name", by.y="GeoID")
 head(AnnotatedProteins) #confirm merge
-nrow(AnnotatedProteins)
-write.table(AnnotatedProteins, "2017-06-30_All-Annotated-Proteins.csv")
+nrow(AnnotatedProteins) #count number of proteins that were matched with the list of annotations
+write.table(AnnotatedProteins, "2017-06-30_All-Annotated-Proteins.tab", quote=F, row.names = F, sep="\t") #write out .tab file
 
 #### CREATE NMDS PLOT ####
 
@@ -61,24 +58,20 @@ source("biostats.R") #Either load the source R script or copy paste. Must run th
 library(vegan)
 
 #Make sure first column of protein names is recognized as row names instead of values - this takes the first column containin protein names, and assigns it to the row "header" names 
-area.protID2 <- NormProtAreaAggAveraged[-1]
-rownames(area.protID2) <- NormProtAreaAggAveraged[,1]
-head(area.protID2)
-write.csv(area.protID2, file="2017-06-30_NormProtAreaAgg&Ave.csv")
+area.protID <- NormProtAreaAggAveraged[-1]
+rownames(area.protID) <- NormProtAreaAggAveraged[,1]
+head(area.protID)
+write.csv(area.protID, file="2017-07-04_NormProtAreaAgg&Ave.csv") #write this file out for safe keeping 
 
-
-#Transpose the file so that rows and columns are switched and normalized by log(x+1)
-nrow(NormProtAreaAggAveraged)
-ncol(NormProtAreaAggAveraged)
-
-area2.t <- t(area.protID2[,1:9])
-area2.tra1 <- (area2.t+1)
-area2.tra2 <- data.trans(area2.tra1, method = 'log', plot = FALSE)
-ncol(area2.tra2)
-nrow(area2.tra2)
+#Transpose the file so that rows and columns are switched 
+area.protID.t <- t(area.protID[,1:9])
+nrow(NormProtAreaAggAveraged) # Compare row and column lengths before and after transposing
+ncol(NormProtAreaAggAveraged) 
+nrow(area.protID.t)
+ncol(area.protID.t)
 
 #Make MDS dissimilarity matrix
-proc.nmds <- metaMDS(area2.t, distance = 'bray', k = 2, trymax = 100, autotransform = FALSE)
+proc.nmds <- metaMDS(area.protID.t, distance = 'bray', k = 2, trymax = 100, autotransform = FALSE)
 
 #Make figure
 fig.nmds <- ordiplot(proc.nmds, choices=c(1,2), type='none', display='sites', xlab='Axis 1', ylab='Axis 2', cex=1)
@@ -93,23 +86,31 @@ fig.nmds <- ordiplot(proc.nmds, choices=c(1,2), type='none', display='sites', xl
 points(fig.nmds, 'sites', col=c('red', 'blue', 'black', 'green', 'magenta','red', 'blue', 'black', 'green', 'magenta'), pch=c(rep(16,5), rep(17,5)))
 legend(0.185,0.1, pch=c(rep(16,5), 1, 2), legend=c('Case Inlet', "Fidalgo Bay", "Willapa Bay", "Skokomish", "Port Gamble", "Bare", "Eelgrass"), col=c('red', 'blue', 'black', 'green', 'magenta', 'black', 'black'))
 
+
 #### FULL HEATMAP ####
 
 #Install package
 install.packages("pheatmap")
 library(pheatmap)
 
-#Data should be log(x) or log(x+1) transformed for this analysis, so I'll use my area2.tra dataset.
+#Data should be log(x) or log(x+1) transformed for this analysis. I invert my data (since I had normalized by TIC so values were <1), then log transform.
+
+#Invert data then log transformation for heat map
+area.protID.t.inv <- (1/area.protID.t)
+is.na(area.protID.t.inv) <- sapply(area.protID.t.inv, is.infinite) # change "Inf" to "NA"
+area.protID.t.inv.log <- data.trans(area.protID.t.inv, method = 'log', plot = FALSE)
+ncol(area.protID.t.inv.log)
+nrow(area.protID.t.inv.log)
 
 #Create heatmap
-pheatmap(area2.tra2, cluster_rows = T, cluster_cols = T, clustering_distance_rows = 'euclidean', clustering_distance_cols = 'euclidean', clustering_method = 'median', show_rownames = T, show_colnames = F)
+pheatmap(area.protID.t.inv.log, cluster_rows = T, cluster_cols = T, clustering_distance_rows = 'euclidean', clustering_distance_cols = 'euclidean', clustering_method = 'median', show_rownames = T, show_colnames = F)
 
 #Export preliminary heatmap as a .png
-png(filename = "Heatmap-by-median.png")
-pheatmap(area2.tra2, cluster_rows = T, cluster_cols = T, clustering_distance_rows = 'euclidean', clustering_distance_cols = 'euclidean', clustering_method = 'median', show_rownames = T, show_colnames = F)
+png(filename = "2017-07-04_Heatmap-by-median.png")
+pheatmap(area.protID.t.inv.log, cluster_rows = T, cluster_cols = T, clustering_distance_rows = 'euclidean', clustering_distance_cols = 'euclidean', clustering_method = 'median', show_rownames = T, show_colnames = F)
 dev.off()
 
-### Find COEFFICIENT OF VARIANCES & MEDIANS ###
+### Find COEFFICIENT OF VARIANCES & MEANS ###
 
 ProtVariance <- c(var(area2.tra2[-1], area2.tra2[1], na.rm=TRUE))
 ProtMeans <- c(colMeans(area2.tra2[-1], na.rm=TRUE))
@@ -129,12 +130,4 @@ nrow(ProtMeans)
 ncol(ProtVariance)
 nrow(ProtVariance)
 
-
-### Boneyard script ### 
-
-proteinAccessionCodes <- read.table(file = "background-proteome-accession.txt", header = FALSE, col.names = c("averageAreaAdjusted.proteins", "accession", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12"))
-proteinAccessionCodes <- within(proteinAccessionCodes, rm("V3", "V4", "V5", "V6", "V7", "V8", "V9", "V10", "V11", "V12")) #Removing the extra columns
-names(proteinAccessionCodes) <- c("averageProteinAreas.protein", "accession")
-head(proteinAccessionCodes) #View uploaded data and confirm changes
-head(averageProteinAreasMerged)
 
