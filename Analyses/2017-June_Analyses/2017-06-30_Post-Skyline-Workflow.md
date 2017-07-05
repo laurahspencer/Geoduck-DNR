@@ -184,3 +184,7 @@ I saved this tab as a new file, 2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv[2
         length(ProtVariance)
         head(ProtMeans)
         ncol(ProtMeans)
+        
+#### Using David & REVIGO
+
+In [David](https://david.ncifcrf.gov), I uploaded the Uniprot accession numbers for 1) all annotated proteins in my data (from the [All Annotated Proteins](https://github.com/laurahspencer/Geoduck-DNR/blob/master/Analyses/2017-June_Analyses/2017-06-30_All-Annotated-Proteins.tab) table I generated in Step 8; then I uploaded all Uniprot accession numbers from the background proteome, referenced in Step 7. I downloaded the [Biological Processes](2017-07-04_DAVID_Bio-Processes-Chart.txt) chart, and the [Functional Annotations](2017-07-04_DAVID_Functional-Annotations-Chart.txt) charts. 
