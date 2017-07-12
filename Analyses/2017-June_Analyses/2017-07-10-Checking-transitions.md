@@ -27,4 +27,9 @@ Beta-1,3-glucan-binding protein (GBP) | comp135114_c0_seq1: poor
 Arachidonate 5-lipoxygenase (5-LO) (5-lipoxygenase) (EC 1.13.11.34) | comp135856_c0_seq2: excellent
 ![image](https://user-images.githubusercontent.com/17264765/28049626-6c432458-65ad-11e7-99b4-c5a782e2a676.png)
 
-TB Continued.... 
+I reviewed ~160 proteins from three lists: diff. expressed, stress-related, and Yaamini's targets. I counted the # peptides detected and assined a quality ranking: poor, fair, okay, good, great, excellent. Total # proteins with >2 peptides and ranked great or excellent: 40
+
+![image](https://user-images.githubusercontent.com/17264765/28093795-cfe9d6c8-664d-11e7-8319-b3cae9cfd1e9.png)
+
+From this list I selected the following: 
+  * TBD
