@@ -1,10 +1,48 @@
 ### Import Dataset ### 
-### Note: this dataset has already been massaged in Excel: sum area by protein, normalized by TIC, all n/a's removed (replaced with zeros), and columns renamed
-setwd("~/Documents/Roberts Lab/Geoduck-DNR/Analyses/2017-June_Analyses")
-NormProtArea <- read.csv("2017-06-02_SKYLINE-Total-Protein-Area-NORM.csv", header=TRUE, na.strings = "0") # import local file
-head(NormProtArea)
+### Note: this script works with datasets downloaded from Skyline.  Skyline data is exported as report, and this script works with data with the following metrics: Protein Name, Transitions, Peptide Sequence, Fragment Ion, Peptide Retention Time, Area
 
-### SUM TRANSITION AREA BY PROTEIN ### 
+
+### has already been massaged in Excel: sum area by protein, normalized by TIC, all n/a's removed (replaced with zeros), and columns renamed
+
+setwd("~/Documents/Roberts Lab/Geoduck-DNR/Data") 
+SRMreport <- read.csv("2017-08-11_Transition Results_LHS modified-noRT-pivoted.csv", header=FALSE, na.strings = "0", stringsAsFactors = FALSE) # import local file
+head(SRMreport)
+SRMsequence <- read.csv("2017-07-28_SRM-Sequence-final.csv", header=TRUE)
+head(SRMsequence)
+
+### ASSIGN SAMPLE NAMES
+SRMreport[1,] # replicate names
+length(SRMreport[1,]) # Number of replicates I ran on mass spec
+rep.names <- SRMreport[1,] # create vector of replicate names
+rep.names
+rep.names.short <- noquote(gsub(' Area', '', rep.names)) # remove Area from rep name, and don't include quotes 
+rep.names.short # check to confirm correct names
+rep.names.short <- noquote(gsub('2017_July_10_bivalves_', '', rep.names.short)) #remove the extra long rep name that is a residual from the .raw file name
+rep.names.short
+SRMsequence$Replicate.Name
+is.character(SRMsequence$Replicate.Name)
+noquote(as.character(SRMsequence$Replicate.Name))
+head(SRMsequence)
+repsTOsamples <- as.data.frame(SRMsequence[,2:3])
+repsTOsamples
+library(dplyr)
+repsTOsamples.filtered <- filter(repsTOsamples, repsTOsamples[,1] %in% rep.names.short)
+repsTOsamples.filtered
+samples <- as.character(repsTOsamples.filtered$Comment)
+samples
+other.headers <- as.character(rep.names.short[1:4])
+samples.vector <- noquote(c(other.headers, samples, stringsAsFactors = FALSE))
+length(samples.vector)
+samples.vector <- samples.vector[-121]
+length(samples.vector)
+length(SRMreport[1,])
+SRMreport.sample.names <- SRMreport
+SRMreport.sample.names[1,] <- samples.vector
+head(SRMreport.sample.names)
+ncol(SRMreport.sample.names) #confirm still have the correct # columns
+
+
+### SUM TRANSITION AREA BY PROTEIN ###
 # The "Area" values (which have already been normalized by TIC) are peak area for each transition. Sum them to determine total area for each protein
 
 NormProtAreaAgg <- aggregate(cbind(FB.E.1, CI.E.1, PG.B.1, SK.E.1, FB.B.1, WB.B.1, SK.B.1, CI.B.1, PG.E.1, WB.B.2, PG.E.2, FB.E.2, FB.B.2, CI.B.2, SK.E.2, PG.B.2, SK.B.2, CI.E.2) ~ Protein.Name, FUN = sum, data = NormProtArea, na.rm = TRUE, na.action = NULL)
