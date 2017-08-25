@@ -42,15 +42,31 @@ repsTOsamples.filtered.annotated <- filter(sample.key[,c(8,9)], sample.key$PRVia
 length(SRMsamples) # check # samples there should be total
 nrow(repsTOsamples.filtered.annotated) # check # samples is appropriate
 repsTOsamples.filtered.annotated # NOTE: missing 71-A & 71-B, need to fix 
-CI.E <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "CI-E"),]
-CI.B <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "CI-B"),]
-PG.E <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "PG-E"),]
-PG.B <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "PG-B"),]
-WB.E <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "WB-E"),]
-WB.B <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "WB-B"),]
-FB.E <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "FB-E"),]
-FB.B <- repsTOsamples.filtered.annotated[c(repsTOsamples.filtered.annotated$Sample.Shorthand == "FB-B"),]
 
+# Add G071-A & G071-B coding to the annotated key
+s71.A <- data.frame(matrix(0, ncol=2, nrow=1))
+s71.A[1,1] <- "G071.A"
+s71.A[1,2] <- "PG-E"
+colnames(s71.A) <- colnames(repsTOsamples.filtered.annotated)
+s71.B <- data.frame(matrix(0, ncol=2, nrow=1))
+s71.B[1,1] <- "G071.B"
+s71.B[1,2] <- "PG-E"
+colnames(s71.B) <- colnames(repsTOsamples.filtered.annotated)
+
+# row bind annotated key w/ 71 info
+sample.key.annotated <- rbind(repsTOsamples.filtered.annotated, s71.A, s71.B)
+
+# Subset sample names for site & treatment combos
+CI.E <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "CI-E"),]
+CI.B <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "CI-B"),]
+PG.E <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "PG-E"),]
+PG.B <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "PG-B"),]
+WB.E <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "WB-E"),]
+WB.B <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "WB-B"),]
+FB.E <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "FB-E"),]
+FB.B <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "FB-B"),]
+
+# Isolate just sample names for each site/treatment combo
 CI.E.samples <- CI.E$PRVial
 CI.B.samples <- CI.B$PRVial
 PG.E.samples <- PG.E$PRVial
@@ -59,6 +75,10 @@ WB.E.samples <- WB.E$PRVial
 WB.B.samples <- WB.B$PRVial
 FB.E.samples <- FB.E$PRVial
 FB.B.samples <- FB.B$PRVial
+
+# Isolate eelgrass and bare group sample names
+Eelgrass.samples <- c(CI.E.samples, PG.E.samples, WB.E.samples, FB.E.samples)
+Bare.samples <- c(CI.B.samples, PG.B.samples, WB.B.samples, FB.B.samples)
 
 ### CONVERT AREA DATA TO NUMERIC FORMAT ### 
 
@@ -71,7 +91,7 @@ SRM.data.numeric[,5:120] <- as.numeric(
 )
 is.numeric(SRM.data.numeric[2,20]) # confirm area data is numeric, using a random cell. Should equal TRUE.
 
-# Name each row with a unique transition ID
+#### NAME EACH ROW WITH A UNIQUE TRANSITION ID ###
 nTransitions <- length(SRM.data.numeric$Transition) # How many transitions are there
 Transition.ID <- vector(length=nTransitions) # create empty vector with length= number of transitions
 for (i in 1:nTransitions) {  
@@ -82,34 +102,109 @@ row.names(SRM.data.numeric) <- Transition.ID # assign newly created transition I
 head(SRM.data.numeric) # confirm changes
 # write.csv(SRM.data.numeric, file="Data/2017-08-19_SRM-data-R1.csv") #write this file out for safe keeping
 
-### NORMALIZE ### 
-# Discard PRTC peptides that elute early and late for this analysis since their quantities are less stable. These were identified via Skyline, and are the following: 
-### DID I ALREADY DO THIS? NEED TO CHECK IT OUT ON MY LAB NOTEBOOK ### 
+### NORMALIZE BASED ON PRTC ABUNDANCE ### 
 
-# Normalize peak area abundances by averaged PRTC peptide abundances for each sample to normalize for protein loading. PRTC concentrations varied between sample prep; I factor this in by normalizing again by X, Y, Z... [TBD]
-
+# Extract PRTC peptides 
 SRM.data.numeric[115:142,1:5] #check out which rows pertain to PRTC peptides, it's 117->142
-SRM.PRTC <- SRM.data.numeric[116:142,] #pull out PRTC data for each sample
+SRM.PRTC <- SRM.data.numeric[117:142,] #pull out PRTC data for each sample
+head(SRM.PRTC)
+ncol(SRM.PRTC[,-1:-4])
 
-# Adjust PRTC abundance for remake samples, since that was made at 10% the concentration of the others PRTC batches
+# Discard PRTC peptides what eluted early and late for this analysis since their quantities are less stable. These were identified via Skyline.
+# Good quality are: "LTILEELR", "GLILVGGYGTR", "ELGQSGVDTYLQTK", "SAAGAFGPELSR", "TASEFDSAIAQDK"
+# Poor Quality are: "IGDYAGIK", "DIPVPKPK", "HVLTSIGEK", "GISNEGQNASIK", "SSAAPPPPPR"
+rownames(SRM.PRTC)
+rownames(SRM.PRTC[1:12,])
+rownames(SRM.PRTC[13:27,])
+SRM.PRTC.good <- SRM.PRTC[1:12,]
+head(SRM.PRTC.good)
+ncol(SRM.PRTC.good[,-1:-4])
 
-SRM.PRTC.adjusted <- SRM.PRTC
-SRM.PRTC.adjusted
-SRM.PRTC.adjusted$`G114-remake-C` <- SRM.PRTC.adjusted$`G114-remake-C`*10
-SRM.PRTC.adjusted$`G053-remake-C` <- SRM.PRTC.adjusted$`G053-remake-C`*10
-SRM.PRTC.adjusted$`G104-remake-C` <- SRM.PRTC.adjusted$`G104-remake-C`*10
-SRM.PRTC.adjusted$`G104-remake-D` <- SRM.PRTC.adjusted$`G104-remake-D`*10
-SRM.PRTC.adjusted$`G053-remake-D` <- SRM.PRTC.adjusted$`G053-remake-D`*10
-SRM.PRTC.adjusted$`G114-remake-D` <- SRM.PRTC.adjusted$`G114-remake-D`*10
+###### Assign PRTC batches based on which PRTC mix samples were made with ######
+
+SRM.PRTC.a <- cbind(
+  SRM.PRTC.good[,1:4], 
+  SRM.PRTC.good[, grepl("G013|G120|G047|G017|G079|G127|G060|G009|G002|G128|G016|G071-A|G114|G045|G132|G031|G012|G116|G043|G015|G040", names(SRM.PRTC)) & !grepl("remake", names(SRM.PRTC))]
+)
+
+SRM.PRTC.b <- cbind(
+  SRM.PRTC.good[,1:4],
+  SRM.PRTC.good[, grepl("G110|G008|G109|G122", names(SRM.PRTC))]
+)
+
+SRM.PRTC.c <- cbind(
+  SRM.PRTC.good[,1:4],
+  SRM.PRTC.good[, grepl("G041|G066|G105|G032|G129|G054|G081|G003|G074|G014|G049|G053|G104|G055|G042|G064|G073|G057|G007|G070|G001|G071-B|G062", names(SRM.PRTC)) & !grepl("remake", names(SRM.PRTC))]
+)
+
+SRM.PRTC.d <- cbind(
+  SRM.PRTC.good[,1:4],
+  SRM.PRTC.good[, grepl("G114.remake|G053.remake|G104.remake", names(SRM.PRTC))]
+)
+
+############# Calculate mean abundance for each transition within PRTC batches ##############
+
+# PRTC batch A
+SRM.PRTC.a.mean <- 1:nrow(SRM.PRTC.a)# Create vector to be filled by loop with mean PRTC area
+for (i in SRM.PRTC.a.mean) { 
+  SRM.PRTC.a.mean[i] <- rowMeans(SRM.PRTC.a[i,-1:-4], na.rm=TRUE)  # create a sample, each entry represents a sample with mean abundance for all PRTC transitions in that sample
+}
+print(SRM.PRTC.a.mean)
+
+# PRTC batch B
+SRM.PRTC.b.mean <- 1:nrow(SRM.PRTC.b)# Create vector to be filled by loop with mean PRTC area
+for (i in SRM.PRTC.b.mean) { 
+  SRM.PRTC.b.mean[i] <- rowMeans(SRM.PRTC.b[i,-1:-4], na.rm=TRUE)  # create a sample, each entry represents a sample with mean abundance for all PRTC transitions in that sample
+}
+print(SRM.PRTC.b.mean)
+
+# PRTC batch C
+SRM.PRTC.c.mean <- 1:nrow(SRM.PRTC.c)# Create vector to be filled by loop with mean PRTC area
+for (i in SRM.PRTC.c.mean) { 
+  SRM.PRTC.c.mean[i] <- rowMeans(SRM.PRTC.c[i,-1:-4], na.rm=TRUE)  # create a sample, each entry represents a sample with mean abundance for all PRTC transitions in that sample
+}
+print(SRM.PRTC.c.mean)
+
+# PRTC batch D 
+SRM.PRTC.d.mean <- 1:nrow(SRM.PRTC.d)# Create vector to be filled by loop with mean PRTC area
+for (i in SRM.PRTC.d.mean) { 
+  SRM.PRTC.d.mean[i] <- rowMeans(SRM.PRTC.d[i,-1:-4], na.rm=TRUE)  # create a sample, each entry represents a sample with mean abundance for all PRTC transitions in that sample
+}
+print(SRM.PRTC.d.mean)
+
+# Combine batch means into new data frame
+PRTC.batch.means <- cbind(SRM.PRTC.good[,1:4], SRM.PRTC.a.mean, SRM.PRTC.b.mean, SRM.PRTC.c.mean, SRM.PRTC.d.mean)
+# write.csv(PRTC.batch.means, file="Data/2017-08-22_SRM-PRTC-batch-means.csv") #write this file out for safe keeping
+
+# divide batches a, b & c by b, since it has the highest abundance
+PRTC.a.ratio <- mean(PRTC.batch.means$SRM.PRTC.a.mean/PRTC.batch.means$SRM.PRTC.b.mean, na.rm = TRUE )
+PRTC.b.ratio <- mean(PRTC.batch.means$SRM.PRTC.b.mean/PRTC.batch.means$SRM.PRTC.b.mean, na.rm = TRUE )
+PRTC.c.ratio <- mean(PRTC.batch.means$SRM.PRTC.c.mean/PRTC.batch.means$SRM.PRTC.b.mean, na.rm = TRUE )
+PRTC.d.ratio <- mean(PRTC.batch.means$SRM.PRTC.d.mean/PRTC.batch.means$SRM.PRTC.b.mean, na.rm = TRUE )
+
+# The following is average relative abundance to batch B
+PRTC.a.ratio
+PRTC.b.ratio
+PRTC.c.ratio
+PRTC.d.ratio
+
+####  ADJUST PRTC abundance based on batch ratios ###
+
+SRM.PRTC.adjusted <- cbind(
+  SRM.PRTC.good[, grepl("G013|G120|G047|G017|G079|G127|G060|G009|G002|G128|G016|G071-A|G114|G045|G132|G031|G012|G116|G043|G015|G040", names(SRM.PRTC.good)) & !grepl("remake", names(SRM.PRTC.good))]/PRTC.a.ratio,
+  SRM.PRTC.good[,grepl(c("G110|G008|G109|G122"), names(SRM.PRTC.good))& !grepl("remake", names(SRM.PRTC.good))]/PRTC.b.ratio,
+  SRM.PRTC.good[,grepl("G041|G066|G105|G032|G129|G054|G081|G003|G074|G014|G049|G053|G104|G055|G042|G064|G073|G057|G007|G070|G001|G071-B|G062", names(SRM.PRTC.good))& !grepl("remake", names(SRM.PRTC.good))]/PRTC.c.ratio,
+  SRM.PRTC.good[, grepl("G114.remake|G053.remake|G104.remake", names(SRM.PRTC.good))]/PRTC.d.ratio
+)
+ncol(SRM.PRTC.adjusted) == ncol(SRM.PRTC.good[,-1:-4])
 
 # calculate mean abundance fo all PRTC transitions within samples
-SRM.PRTC.adjusted.mean <- data.frame(colMeans(SRM.PRTC.adjusted[,-1:-4], na.rm=TRUE))
-SRM.PRTC.adjusted.mean
+SRM.PRTC.adjusted.mean <- data.frame(colMeans(SRM.PRTC.adjusted, na.rm=TRUE))
 
 # Now, normalize all sample abundance data based on PRTC mean abundances
-head(SRM.data.numeric.1)
-SRM.data.numeric.1 <- SRM.data.numeric[c(-1,-116:-142),-1:-4] #remove non-data related columns, remove PRTC transitions
+SRM.data.numeric.1 <- SRM.data.numeric[c(-1,-117:-142),-1:-4] #remove non-abundance-data  columns, remove PRTC transitions from assay data
 PRTC.norm.vector <- SRM.PRTC.adjusted.mean[,1] #create vector of mean PRTC abundances for each sample
+SRM.PRTC.adjusted.mean
 length(PRTC.norm.vector) == ncol(SRM.data.numeric.1) #confirm PRTC normalization vector length equals # samples in srm data
 SRM.data.normalized <- sweep(SRM.data.numeric.1, 2, PRTC.norm.vector, "/") #normalize srm data (averaged by tech. rep) by mean PRTC abundance for that sample
 head(SRM.data.normalized)
@@ -147,10 +242,8 @@ plot(SRM.nmds)
 # species (variable) in red ticks
 
 # make figure with sample annotations https://stat.ethz.ch/pipermail/r-sig-ecology/2011-September/002371.html
-
 SRM.nmds.samples <- scores(SRM.nmds, display = "sites")
 SRM.nmds.transitions <- scores(SRM.nmds, display = "species")
-
 SRM.nmds.samples.sorted <- SRM.nmds.samples[ order(row.names(SRM.nmds.samples)), ]
 rownames(SRM.nmds.samples.sorted)
 
@@ -163,14 +256,14 @@ pie(rep(1,n), col=sample(col_vector, n))
 colors <- sample(col_vector, 50)
 
 ### PLOTTING ALL REPS BY SAMPLE NUMBER & TREATMENT ### 
-plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-2,3), ylim=c(-0.5,0.5), asp=NA)
+plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1.5,3), ylim=c(-0.5,0.5), asp=NA)
 # symbol key
 # 15 = eelgrass = filled square
 # 21 = bare = open circle
 
 points(SRM.nmds.samples.sorted[c("G001-A", "G001-B"),], col=colors[1], pch=15)
 points(SRM.nmds.samples.sorted[c("G002-A", "G002-B", "G002-C"),], col=colors[50], pch=15)
-points(SRM.nmds.samples.sorted[c("G003-A", "G003-B", "G003-C"),], col=colors[3], pch=15) #G003-C is very different
+points(SRM.nmds.samples.sorted[c("G003-A", "G003-B"),], col=colors[3], pch=15) #G003-C is very different
 points(SRM.nmds.samples.sorted[c("G007-A", "G007-B"),], col=colors[4], pch=15)
 points(SRM.nmds.samples.sorted[c("G008-A", "G008-B"),], col=colors[5], pch=15)
 points(SRM.nmds.samples.sorted[c("G009-A", "G009-B"),], col=colors[6], pch=15)
@@ -195,7 +288,7 @@ points(SRM.nmds.samples.sorted[c("G055-A", "G055-B"),], col=colors[24], pch=15) 
 points(SRM.nmds.samples.sorted[c("G057-A", "G057-B", "G057-C"),], col=colors[25], pch=21) #one is off
 points(SRM.nmds.samples.sorted[c("G060-A", "G060-B"),], col=colors[26], pch=21) 
 points(SRM.nmds.samples.sorted[c("G062-B", "G062-C"),], col=colors[27], pch=21)
-points(SRM.nmds.samples.sorted[c("G064-A", "G064-B"),], col=colors[28], pch=21)
+points(SRM.nmds.samples.sorted[c("G064-A", "G064-B"),], col=colors[50], pch=21)
 points(SRM.nmds.samples.sorted[c("G066-A", "G066-B"),], col=colors[29], pch=21)
 points(SRM.nmds.samples.sorted[c("G070-A", "G070-B", "G070-C"),], col=colors[30], pch=21)
 points(SRM.nmds.samples.sorted[c("G071-A-A", "G071-A-B"),], col=colors[31], pch=15)
@@ -208,7 +301,7 @@ points(SRM.nmds.samples.sorted[c("G104-A", "G104-B", "G104-remake-C", "G104-rema
 points(SRM.nmds.samples.sorted[c("G105-A", "G105-B"),], col=colors[38], pch=21)
 points(SRM.nmds.samples.sorted[c("G109-A", "G109-B", "G109-C"),], col=colors[39], pch=15)
 points(SRM.nmds.samples.sorted[c("G110-A", "G110-B"),], col=colors[40], pch=15)
-points(SRM.nmds.samples.sorted[c("G114-A", "G114-B", "G114-remake-C", "G114-remake-D"),], col=colors[41], pch=21) # check these out!
+points(SRM.nmds.samples.sorted[c("G114-B", "G114-remake-C", "G114-remake-D"),], col=colors[41], pch=21) # check these out!
 points(SRM.nmds.samples.sorted[c("G116-A", "G116-B"),], col=colors[42], pch=21)
 points(SRM.nmds.samples.sorted[c("G120-A", "G120-B"),], col=colors[43], pch=21)
 points(SRM.nmds.samples.sorted[c("G122-A", "G122-B"),], col=colors[44], pch=21)
@@ -219,51 +312,21 @@ points(SRM.nmds.samples.sorted[c("G132-A", "G132-C", "G132-D"),], col=colors[48]
 
 #### NEXT, REMOVE SAMPLES THAT DON'T LOOK GOOD, AVERAGE TECH REPS, THEN RE-PLOT BY SITE/TREATMENT #### 
 
-### Plotting by site and treatment ####
-plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-2,3), ylim=c(-0.5,0.5), asp=NA)
-# symbol key
-# 15 = eelgrass = filled square
-# 21 = bare = open circle
-# red = PG
-# blue = CI
-# green = WB
-# black = FB
-
-CI.E.samples
-CI.B.samples
-PG.E.samples
-PG.B.samples
-WB.E.samples
-WB.B.samples
-FB.E.samples
-FB.B.samples
-
-#### testing figures
-ordiplot(SRM.nmds,type="n")
-orditorp(SRM.nmds,display="sites",cex=1.25,air=0.1)
-
-fig.nmds <- ordiplot(SRM.nmds, choices=c(1,2), 'sites', type='none', xlab='Axis 1', ylab='Axis 2', cex=1)
-?ordiplot
-points(SRM.nmds, 'sites', col=c("red"), pch=16)
-legend(SRM.nmds)
-NMDS.plot.colors
-
-# average sample technical reps.  (there's probably an easier way to do this to not manually enter the tech rep names for each sample, possibly via a loop?)
+# average sample technical reps.  (there's probably an easier way to do this to not manually enter the tech rep names for each sample, possibly via a loop?); remove reps that were poor quality as per NMDS
 
 G013 <- ave(SRM.data.normalized$'G013-A', SRM.data.normalized$'G013-C')
 G120 <- ave(SRM.data.normalized$`G120-A`, SRM.data.normalized$`G120-B`)
 G047 <- ave(SRM.data.normalized$`G047-A`, SRM.data.normalized$`G047-B`)
 G017 <- ave(SRM.data.normalized$`G017-A`, SRM.data.normalized$`G017-B`)
 G079 <- ave(SRM.data.normalized$`G079-A`, SRM.data.normalized$`G079-B`)
-G127 <- ave(SRM.data.normalized$`G127-A`, SRM.data.normalized$`G127-B`, SRM.data.normalized$`G127-C`)
+G127 <- ave(SRM.data.normalized$`G127-A`, SRM.data.normalized$`G127-C`) #B removed
 G060 <- ave(SRM.data.normalized$`G060-A`, SRM.data.normalized$`G060-B`)
 G009 <- ave(SRM.data.normalized$`G009-A`, SRM.data.normalized$`G009-B`)
-G002 <- ave(SRM.data.normalized$`G002-A`, SRM.data.normalized$`G002-B`, SRM.data.normalized$`G002-C`)
+G002 <- ave(SRM.data.normalized$`G002-B`, SRM.data.normalized$`G002-C`) #A removed
 G128 <- ave(SRM.data.normalized$`G128-A`, SRM.data.normalized$`G128-C`,SRM.data.normalized$`G128-D`)
 G016 <- ave(SRM.data.normalized$`G016-A`, SRM.data.normalized$`G016-B`, SRM.data.normalized$`G016-C`)
 G071.A <- ave(SRM.data.normalized$`G071-A-A`, SRM.data.normalized$`G071-A-B`)
-G114 <- ave(SRM.data.normalized$`G114-A`, SRM.data.normalized$`G114-B`)
-G114.remake <- ave(SRM.data.normalized$`G114-remake-C`, SRM.data.normalized$`G114-remake-D`)
+G114 <- ave(SRM.data.normalized$`G114-A`, SRM.data.normalized$`G114-B`, SRM.data.normalized$`G114-remake-C`, SRM.data.normalized$`G114-remake-D`)
 G045 <- ave(SRM.data.normalized$`G045-A`, SRM.data.normalized$`G045-B`)
 G132 <- ave(SRM.data.normalized$`G132-A`, SRM.data.normalized$`G132-C`, SRM.data.normalized$`G132-D`)
 G031 <- ave(SRM.data.normalized$`G031-A`, SRM.data.normalized$`G031-B`, SRM.data.normalized$`G031-C`)
@@ -283,16 +346,14 @@ G032 <- ave(SRM.data.normalized$`G032-A`, SRM.data.normalized$`G032-B`)
 G129 <- ave(SRM.data.normalized$`G129-A`, SRM.data.normalized$`G129-B`)
 G054 <- ave(SRM.data.normalized$`G054-A`, SRM.data.normalized$`G054-B`)
 G081 <- ave(SRM.data.normalized$`G081-A`, SRM.data.normalized$`G081-B`)
-G003 <- ave(SRM.data.normalized$`G003-A`, SRM.data.normalized$`G003-B`, SRM.data.normalized$`G003-C`)
+G003 <- ave(SRM.data.normalized$`G003-A`, SRM.data.normalized$`G003-B`) #C removed
 G074 <- ave(SRM.data.normalized$`G074-A`, SRM.data.normalized$`G074-B`)
 G014 <- ave(SRM.data.normalized$`G014-A`, SRM.data.normalized$`G014-B`)
 G049 <- ave(SRM.data.normalized$`G049-A`, SRM.data.normalized$`G049-B`)
-G053 <- ave(SRM.data.normalized$`G053-A`, SRM.data.normalized$`G053-B`) 
-G053.remake <- ave(SRM.data.normalized$`G053-remake-C`, SRM.data.normalized$`G053-remake-D`)
-G104 <- ave(SRM.data.normalized$`G104-A`, SRM.data.normalized$`G104-B`)
-G104.remake <- ave(SRM.data.normalized$`G104-remake-C`, SRM.data.normalized$`G104-remake-D`)
+G053 <- ave(SRM.data.normalized$`G053-A`, SRM.data.normalized$`G053-remake-C`, SRM.data.normalized$`G053-remake-D`) #B removed 
+G104 <- ave(SRM.data.normalized$`G104-A`, SRM.data.normalized$`G104-remake-C`, SRM.data.normalized$`G104-remake-D`) #B removed
 G055 <- ave(SRM.data.normalized$`G055-A`, SRM.data.normalized$`G055-B`, SRM.data.normalized$`G055-C`)
-G042 <- ave(SRM.data.normalized$`G042-A`, SRM.data.normalized$`G042-B`, SRM.data.normalized$`G042-C`)
+G042 <- ave(SRM.data.normalized$`G042-A`, SRM.data.normalized$`G042-B`) #C removed
 G064 <- ave(SRM.data.normalized$`G064-A`, SRM.data.normalized$`G064-B`)
 G073 <- ave(SRM.data.normalized$`G073-A`, SRM.data.normalized$`G073-B`, SRM.data.normalized$`G073-C`)
 G057 <- ave(SRM.data.normalized$`G057-A`, SRM.data.normalized$`G057-B`, SRM.data.normalized$`G057-C`)
@@ -300,7 +361,129 @@ G007 <- ave(SRM.data.normalized$`G007-A`, SRM.data.normalized$`G007-B`)
 G070 <- ave(SRM.data.normalized$`G070-A`, SRM.data.normalized$`G070-B`, SRM.data.normalized$`G070-C`)
 G001 <- ave(SRM.data.normalized$`G001-A`, SRM.data.normalized$`G001-B`)
 G071.B <- ave(SRM.data.normalized$`G071-B-A`, SRM.data.normalized$`G071-B-B`)
+G062 <- ave(SRM.data.normalized$`G062-B`, SRM.data.normalized$`G062-C`)
 
-rownames(SRM.data.normalized)
-SRM.data.mean <- noquote(cbind(rownames(SRM.data.normalized), G013, G120, G047, G017, G079, G127, G060, G009, G002, G128, G016, G071.A, G114, G114.remake, G045, G132, G031, G012, G116, G043, G015, G040, G110, G008, G109, G122, G041, G066, G105, G032, G129, G054, G081, G003, G074, G014, G049, G053, G053.remake, G104, G104.remake, G055, G042, G064, G073, G057, G007, G070,  G001, G071.B)) # combine all tech. replicate mean vectors into new data frame 
+SRM.data.mean <- cbind.data.frame(rownames(SRM.data.normalized), G013, G120, G047, G017, G079, G127, G060, G009, G002, G128, G016, G071.A, G114, G045, G132, G031, G012, G116, G043, G015, G040, G110, G008, G109, G122, G041, G066, G105, G032, G129, G054, G081, G003, G074, G014, G049, G053, G104, G055, G042, G064, G073, G057, G007, G070,  G001, G071.B, G062) # combine all tech. replicate mean vectors into new data frame 
+head(SRM.data.mean)
+
+#### CREATE NMDS PLOT ########
+
+#Load the source file for the biostats package, biostats.R script must be saved in working directory
+
+source("References/biostats.R") #Either load the source R script or copy paste. Must run this code before NMDS.
+library(vegan)
+
+#Transpose the file so that rows and columns are switched 
+rownames(SRM.data.mean) <- SRM.data.mean[,1]
 SRM.data.mean
+SRM.data.mean <- SRM.data.mean[,-1]
+SRM.data.mean.t <- t(SRM.data.mean) # t() function transposes
+SRM.data.mean.t
+
+#Replace NA cells with 0; metaMDS() does not handle NA's
+SRM.data.mean.t.noNA <- SRM.data.mean.t
+SRM.data.mean.t.noNA[is.na(SRM.data.mean.t.noNA)] <- 0
+SRM.data.mean.t.noNA
+
+#Make MDS dissimilarity matrix
+#
+SRM.mean.nmds <- metaMDS(SRM.data.mean.t.noNA, distance = 'bray', k = 2, trymax = 3000, autotransform = FALSE)
+# comm= your data.frame or matrix
+# distance= bray, (not sure what this means)
+# k= # of dimensions to assess
+# trymax = max # iterations to attempt if no solution is reached
+
+# Create Shepard plot, which shows scatter around the regression between the interpoint distances in the final configuration (i.e., the distances between each pair of communities) against their original dissimilarities.
+stressplot(SRM.mean.nmds) 
+
+#Make figure
+
+plot(SRM.mean.nmds)
+# site (sample) in black circle
+# species (variable) in red ticks
+
+# make figure with sample annotations https://stat.ethz.ch/pipermail/r-sig-ecology/2011-September/002371.html
+SRM.nmds.mean.samples <- scores(SRM.mean.nmds, display = "sites")
+SRM.nmds.mean.transitions <- scores(SRM.nmds, display = "species")
+# this probably isn't necessary
+
+### Let's plot using ordiplot()
+
+library(RColorBrewer)
+marker = c(color = brewer.pal(4, "Set1"))
+
+ordiplot(SRM.mean.nmds, type="n")
+points(SRM.nmds.mean.samples[c(CI.B.samples),], col=marker[1], pch=8)
+points(SRM.nmds.mean.samples[c(CI.E.samples),], col=marker[1], pch=15)
+points(SRM.nmds.mean.samples[c(PG.B.samples),], col=marker[2], pch=8)
+points(SRM.nmds.mean.samples[c(PG.E.samples),], col=marker[2], pch=15)
+points(SRM.nmds.mean.samples[c(WB.B.samples),], col=marker[3], pch=8)
+points(SRM.nmds.mean.samples[c(WB.E.samples),], col=marker[3], pch=15)
+points(SRM.nmds.mean.samples[c(FB.B.samples),], col=marker[4], pch=8)
+points(SRM.nmds.mean.samples[c(FB.E.samples),], col=marker[4], pch=15)
+
+legend(1.5,0.7, pch=c(rep(16,4), 8, 15), legend=c('Case Inlet', "Fidalgo Bay", "Willapa Bay", "Port Gamble", "Bare", "Eelgrass"), col=c(marker[1], marker[2], marker[3], marker[4], "black", "black"))
+
+#### Create plot with forced aspect ratio to zoom in ### 
+plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1,2.5), ylim=c(-0.4,0.2), asp=NA)
+
+points(SRM.nmds.mean.samples[c(CI.B.samples),], col=marker[1], pch=8)
+points(SRM.nmds.mean.samples[c(CI.E.samples),], col=marker[1], pch=15)
+points(SRM.nmds.mean.samples[c(PG.B.samples),], col=marker[2], pch=8)
+points(SRM.nmds.mean.samples[c(PG.E.samples),], col=marker[2], pch=15)
+points(SRM.nmds.mean.samples[c(WB.B.samples),], col=marker[3], pch=8)
+points(SRM.nmds.mean.samples[c(WB.E.samples),], col=marker[3], pch=15)
+points(SRM.nmds.mean.samples[c(FB.B.samples),], col=marker[4], pch=8)
+points(SRM.nmds.mean.samples[c(FB.E.samples),], col=marker[4], pch=15)
+
+legend(1.5,0.2, pch=c(rep(16,4), 8, 15), legend=c('Case Inlet', "Fidalgo Bay", "Willapa Bay", "Port Gamble", "Bare", "Eelgrass"), col=c(marker[1], marker[2], marker[3], marker[4], "black", "black"))
+
+# symbol key
+# 15 = eelgrass = square
+# 17 = bare = triangle
+# CI = RED
+# PG = BLUE
+# WB = GREEN
+# FB = PURPLE
+
+#### BONEYARD AND TROUBLESHOOTING ####
+
+# somehow I have more columns than I should; let's figure out why 
+# ncol(SRM.PRTC.a[,-1:-4]) + ncol(SRM.PRTC.b[,-1:-4]) + ncol(SRM.PRTC.c[,-1:-4]) + ncol(SRM.PRTC.d[,-1:-4])
+# names <- c(names(SRM.PRTC.a[,-1:-4]), names(SRM.PRTC.b[,-1:-4]), names(SRM.PRTC.c[,-1:-4]), names(SRM.PRTC.d[,-1:-4]))
+# length(names) #122
+# length(unique(names)) #116; somehow I've picked up 6 extra columns! 
+# names[duplicated(names)] #ah, I've included the remade samples in batches a-c, when they should only be in batch d. This is b/c grepl must only include the string
+
+# figuring out why i'm missing data in my NMDS.mean, which won't let me plot bare points
+# length(rownames(SRM.nmds.mean.samples)) == length(Eelgrass.samples) + length(Bare.samples) #what's happening?
+# names <- c(rownames(SRM.nmds.mean.samples), Bare.samples, Eelgrass.samples)
+# length(names)
+# length(rownames(SRM.nmds.mean.samples))
+# length(Eelgrass.samples) + length(Bare.samples) #what's happening?
+# sort(names) 
+# sort(rownames(SRM.nmds.mean.samples)) #found that I'm missing G062 in NMDS data
+
+
+### SUM TRANSITION AREA BY PROTEIN ###
+# The "Area" values (which have already been normalized by TIC) are peak area for each transition. Sum them to determine total area for each protein
+
+# NormProtAreaAgg <- aggregate(cbind(FB.E.1, CI.E.1, PG.B.1, SK.E.1, FB.B.1, WB.B.1, SK.B.1, CI.B.1, PG.E.1, WB.B.2, PG.E.2, FB.E.2, FB.B.2, CI.B.2, SK.E.2, PG.B.2, SK.B.2, CI.E.2) ~ Protein.Name, FUN = sum, data = NormProtArea, na.rm = TRUE, na.action = NULL)
+# head(NormProtAreaAgg) #confirming that proteins are now summed
+
+### Useful functions from R class notes
+
+# str(SRM.data) # examine a data frame specs
+# names() # extract names from data frame
+# head(data.frame, n=x) where x=# of rows
+# ls() # see what is stored in working directory 
+
+#### testing figures
+# ordiplot(SRM.nmds,type="n")
+# orditorp(SRM.nmds,display="sites",cex=1.25,air=0.1)
+
+# fig.nmds <- ordiplot(SRM.nmds, choices=c(1,2), 'sites', type='none', xlab='Axis 1', ylab='Axis 2', cex=1)
+# ?ordiplot
+# points(SRM.nmds, 'sites', col=c("red"), pch=16)
+# legend(SRM.nmds)
+# NMDS.plot.colors

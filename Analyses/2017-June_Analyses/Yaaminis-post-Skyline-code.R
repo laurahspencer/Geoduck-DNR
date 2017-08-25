@@ -87,6 +87,7 @@ points(fig.nmds, 'sites', col=c('red', 'blue', 'black', 'green', 'magenta','red'
 legend(0.185,0.1, pch=c(rep(16,5), 1, 2), legend=c('Case Inlet', "Fidalgo Bay", "Willapa Bay", "Skokomish", "Port Gamble", "Bare", "Eelgrass"), col=c('red', 'blue', 'black', 'green', 'magenta', 'black', 'black'))
 
 
+
 #### FULL HEATMAP ####
 
 #Install package
