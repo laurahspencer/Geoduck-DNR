@@ -1,7 +1,5 @@
-SRM.data4plots.ordered <- read.csv(file="2017-08-31_SRM.data4plots.ordered.csv", header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1)
-SRM.data4plots.ordered <- as.matrix(SRM.data4plots.ordered)
-SRM.proteins <- read.csv(file="2017-08-31_SRM.proteins.csv", header=TRUE)
-
+SRM.data4plots.ordered <- as.matrix(read.csv(file="2017-08-31_SRM.data4plots.ordered.csv", header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1))
+SRM.proteins <- as.matrix(read.csv(file="2017-08-31_SRM.proteins.csv", header=TRUE, row.names = 1))
 
 #Color = SRM.data4plots.ordered[117,]
 # Symbol =SRM.data4plots.ordered[118,]
@@ -38,6 +36,7 @@ barplot(SRM.data4plots.ordered[sum(36:38),], main=SRM.proteins[36,c(1:2)], col=S
 barplot(SRM.data4plots.ordered[sum(39:41),], main=SRM.proteins[39,c(1:2)], col=SRM.data4plots.ordered[117,], density=SRM.data4plots.ordered[118,])
 barplot(SRM.data4plots.ordered[sum(42:44),], main=SRM.proteins[42,c(1:2)], col=SRM.data4plots.ordered[117,], density=SRM.data4plots.ordered[118,])
 
+# trying to troubleshoot / figure out where the problem lies
 SRM.data4plots.ordered[sum(36:38),] #sum of rows 36-38 works
 SRM.data4plots.ordered[sum(39:41),] #sum of rows 39-41 does NOT work
 SRM.data4plots.ordered[mean(39:41),] #but the MEAN of rows 39-41 does work
@@ -47,8 +46,11 @@ SRM.data4plots.ordered[sum(39,41),] #this works
 is.numeric(SRM.data4plots.ordered[39:41,]) #all data in all three rows are numeric
 any(is.na(SRM.data4plots.ordered[39:41,])) #no NA data in these three rows
 
+#and this weirdness happens: 
+SRM.data4plots.ordered[c(38:40),] #these are rows 38-40
+SRM.data4plots.ordered[sum(38:40),] #sum of rows 38-40 is NOT CORRECT 
 
-#### THE REST OF THE BAR PLOTS WON'T WORK, ALL WITH THE SAME ERROR and curious behavior 
+#### THE REST OF THE BAR PLOTS WON'T WORK, ALL WITH THE SAME ERROR and similar curious behavior 
 
 # 
 par(mfrow=c(3,1))
