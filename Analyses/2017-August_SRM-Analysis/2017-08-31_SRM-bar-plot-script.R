@@ -3,6 +3,17 @@
 SRM.data4plots.ordered <- as.matrix(read.csv(url("https://raw.githubusercontent.com/laurahspencer/Geoduck-DNR/master/Data/2017-08-31_SRM.data4plots.ordered.csv"), header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1))
 SRM.proteins <- as.matrix(read.csv(url("https://raw.githubusercontent.com/laurahspencer/Geoduck-DNR/master/Data/2017-08-31_SRM.proteins.csv"), header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1))
 
+SRM.data4plots.ordered <- as.data.frame(SRM.data4plots.ordered)
+
+SRM.data4plots.ordered[sum(36:38),] #sum of rows 36-38 works
+SRM.data4plots.ordered[sum(39:41),1] #sum of rows 39-41 does NOT work
+SRM.data4plots.ordered[mean(39:41),] # #UPDATE: the mean of rows 39-41 produces values, but they are actually not the mean, and in values from row 40
+SRM.data4plots.ordered[sum(39:40),] #this works
+SRM.data4plots.ordered[sum(40:41),] #this works
+SRM.data4plots.ordered[sum(39,41),] #this works
+is.numeric(SRM.data4plots.ordered[39:41,]) #all data in all three rows are numeric
+any(is.na(SRM.data4plots.ordered[39:41,])) #no NA data in these three rows
+
 
 #Color = SRM.data4plots.ordered[117,]
 # Symbol =SRM.data4plots.ordered[118,]
