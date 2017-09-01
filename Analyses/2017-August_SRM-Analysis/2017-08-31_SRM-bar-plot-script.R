@@ -1,10 +1,13 @@
-SRM.data4plots.ordered <- as.matrix(read.csv(file="2017-08-31_SRM.data4plots.ordered.csv", header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1))
-SRM.proteins <- as.matrix(read.csv(file="2017-08-31_SRM.proteins.csv", header=TRUE, row.names = 1))
+##### READ IN DATA FROM GITHUB REPO
+
+SRM.data4plots.ordered <- as.matrix(read.csv(url("https://raw.githubusercontent.com/laurahspencer/Geoduck-DNR/master/Data/2017-08-31_SRM.data4plots.ordered.csv"), header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1))
+SRM.proteins <- as.matrix(read.csv(url("https://raw.githubusercontent.com/laurahspencer/Geoduck-DNR/master/Data/2017-08-31_SRM.proteins.csv"), header=TRUE, stringsAsFactors=FALSE, na.strings = "NA", row.names = 1))
+
 
 #Color = SRM.data4plots.ordered[117,]
 # Symbol =SRM.data4plots.ordered[118,]
 
-#### THE FOLLOWING PLOTS NON-STRINGENT MEAN DATA FOR EACH BIOLOGICAL REP., organized, & color/pattern coded by site/treatment
+#### PLOT NON-STRINGENT MEAN DATA FOR EACH BIOLOGICAL REP., organized, & color/pattern coded by site/treatment
 
 # HSP 90
 par(mfrow=c(3,1))
