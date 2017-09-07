@@ -2,18 +2,18 @@
 
 ######## CALCULATE & PLOT MEAN & STANDARD ERROR FOR SAMPLES BY SITE FOR EACH PROTEIN ########
 # Use data4anosim.noNA dataset 
+View(data4anosim.noNA)
 
 #melt data to prepare for ggplot
 library(reshape2)
-View(data4anosim.noNA)
 data.melted <- melt(data4anosim.noNA, id=c("SAMPLE", "SITE", "TREATMENT", "BOTH"), variable.name = "Transition", value.name = "Area")
-View(data.melted)
 
 ####### check out total abundance & other stats by site
 TotAbund.SITE <- do.call(data.frame, aggregate(Area ~ SITE, data.melted, function(x) c(sum=sum(x), sd=sd(x), range=range(x), min=min(x), max=max(x))))
-View(TotAbund.SITE)
 
-#Bar plot showing total abundance by site, with error bars
+View(data.melted)
+
+nav#Bar plot showing total abundance by site, with error bars
 library(ggplot2)
 TotSum.bar <- ggplot(TotAbund.SITE, aes(x=SITE, y=Area.sum, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Total Abundance by Site") +
@@ -29,7 +29,6 @@ ggplot(data.melted, aes(SITE, Area)) + geom_violin(aes(colour=TREATMENT)) + ggti
 #Log+1 transform summary data for plotting purposes
 data.melted.log <- data.melted
 data.melted.log$Area <- log(data.melted.log$Area+1)
-View(data.melted.log)
 TotAbund.SITE.log <- do.call(data.frame, aggregate(Area ~ SITE, data.melted.log, function(x) c(sum=sum(x), sd=sd(x), range=range(x), min=min(x), max=max(x))))
 TotSum.log.bar <- ggplot(TotAbund.SITE.log, aes(x=SITE, y=Area.sum, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Total Abundance by Site, log+1 transformed") +
@@ -50,11 +49,11 @@ dev.off()
 #######
 
 # Merge protein names back to abundance data
-SRM.proteins <- data.frame(SRM.data.numeric[2:142,1:4]) #protein name to each transition
+SRM.proteins <- data.frame(SRM.data.screened.noPRTC[,1:4]) #protein name to each transition
 SRM.proteins[,1] <- sub(" cds.*", "", SRM.proteins[,1])
 data.melted.plus <- merge(x=data.melted, y=SRM.proteins, by.x = "Transition", by.y = "row.names", all.x=TRUE, all.y=FALSE)
 colnames(data.melted.plus)[1] <- "Pep.Trans"
-# write.csv(data.melted.plus, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-melted-annotated.csv")
+write.csv(data.melted.plus, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-melted-annotated.csv")
 
 # Write program with summary statistics http://www.sthda.com/english/wiki/ggplot2-error-bars-quick-start-guide-r-software-and-data-visualization
 data_summary <- function(data, varname, groupnames){
@@ -74,6 +73,8 @@ View(SRM.stats)
 write.csv(SRM.stats, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-summary-stats.csv")
 
 #### PLOT SITE MEANS FOR EACH PROTEIN, BROKEN INTO PROTEIN, PEPTIDE & TRANSITION
+SRM.stats4plots <- SRM.stats[grepl(c("APGLPAQIK y5|AGELGGSDPDYAMR y6|QSLLPFGATGPR y8|APNSFNLR y5|IINEPTAAALAYGLDK y12|GVVDSEDLPLNISR y6|ALFIIDDK y4|DNVVVIGFFK y7|SIQQSVENIR y6|STIGVEFATR y7|TVIEPMAGDGLR y8|ISLTGPHSIIGR y8|FNLWGGSLSLGHPFGATGVR y8"), SRM.stats$Pep.Trans),]
+
 library(ggplot2)
 
 # Arachidonate 5-lipoxygenase
@@ -92,6 +93,13 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Arachidonate 5-lipoxygenase"), aes(x
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Arachidonate 5-lipoxygenase") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Arachidonate.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% "Arachidonate 5-lipoxygenase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Arachidonate 5-lipoxygenase") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Catalase
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-CatalasePro.png")
@@ -109,6 +117,13 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Catalase"), aes(x=Pep.Trans, y=Area,
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Catalase") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Catalase.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% "Catalase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Catalase") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Cytochrome P450
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-CytochromePro.png")
@@ -126,6 +141,13 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Cytochrome P450"), aes(x=Pep.Trans, 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Cytochrome P450") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Cytochrome.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% "Cytochrome P450"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Cytochrome P450") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Glycogen phosphorylase, muscle form
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-GlycogenPro.png")
@@ -143,6 +165,13 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Glycogen phosphorylase, muscle form"
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Glycogen phosphorylase, muscle form") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Glycogen.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% "Glycogen phosphorylase, muscle form"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Glycogen phosphorylase, muscle form") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Heat shock 70 kDa protein
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP70Pro.png")
@@ -159,6 +188,11 @@ png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP70Tran.png")
 ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock 70 kDa protein"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 70") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP70.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[313,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 70") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"), legend.title=element_text(size=20), legend.text=element_text(size=20))
 dev.off()
 
 # Heat shock protein HSP 90-alpha
@@ -177,8 +211,15 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock protein HSP 90-alpha"), a
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 90") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP90.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% "Heat shock protein HSP 90-alpha"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 90") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
 
-# Peroxiredoxin-1
+#++++++++++++++++++++++
+
+# Peroxiredoxin-1  
 
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-PeroxiredoxinPro.png")
 ggplot(subset(SRM.stats, Protein.Name %in% "Peroxiredoxin-1"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
@@ -195,6 +236,13 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Peroxiredoxin-1"), aes(x=Pep.Trans, 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Peroxiredoxin-1") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Peroxiredoxin.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[328,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Peroxiredoxin-1") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Protein disulfide-isomerase (PDI)
 
@@ -213,8 +261,16 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Protein disulfide-isomerase (PDI)"),
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Protein disulfide-isomerase") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-PDI.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[331,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Protein disulfide-isomerase") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
 
-# Puromycin-sensitive aminopeptidase
+#++++++++++++++++++++++
+
+# Puromycin-sensitive aminopeptidase 
+
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-PuromycinPro.png")
 ggplot(subset(SRM.stats, Protein.Name %in% "Puromycin-sensitive aminopeptidase"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Puromycin-sensitive aminopeptidase") +
@@ -230,8 +286,16 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Puromycin-sensitive aminopeptidase")
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Puromycin-sensitive aminopeptidase") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Puromycin.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[337,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Puromycin-sensitive aminopeptidase") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
 
-# Ras-related protein Rab-11B
+#++++++++++++++++++++++
+
+# Ras-related protein Rab-11B 
+
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-RasrelatedRabPro.png")
 ggplot(subset(SRM.stats, Protein.Name %in% "Ras-related protein Rab-11B"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Ras-related protein Rab-11B") +
@@ -247,23 +311,38 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Ras-related protein Rab-11B"), aes(x
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Ras-related protein Rab-11B") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-RasrelatedRab.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[346,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Ras-related protein Rab-11B") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
 
-# Sodium/potassium-transporting ATPase subunit alpha-4 
+#++++++++++++++++++++++
+
+# Sodium/potassium-transporting ATPase subunit alpha-4  
+
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-NAKtransprotingPro.png")
-ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[435,2]), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[257,2]), aes(x=Protein.Name, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Na/K-transporting ATPase subunit alpha-4") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-NAKtransprotingPep.png")
-ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[435,2]), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[257,2]), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Na/K-transporting ATPase subunit alpha-4") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-NAKtransprotingTran.png")
-ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[435,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[257,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Na/K-transporting ATPase subunit alpha-4") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-NAKtransproting.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[257,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Na/K-transporting ATPase subunit alpha-4") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Superoxide dismutase
 
@@ -282,21 +361,33 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Superoxide dismutase"), aes(x=Pep.Tr
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Superoxide dismutase") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-Superoxide.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% "Superoxide dismutase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Superoxide dismutase") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()
+
+#++++++++++++++++++++++
 
 # Trifunctional enzyme subunit beta, mitochondrial
+
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-TrifunctEnzymePro.png")
-ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[460,2]), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[360,2]), aes(x=Protein.Name, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Trifunctional enzyme subunit beta, mitochondrial") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-TrifunctEnzymePep.png")
-ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[460,2]), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[360,2]), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Trifunctional enzyme subunit beta, mitochondrial") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-TrifunctEnzymeTran.png")
-ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[460,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+ggplot(subset(SRM.stats, Protein.Name %in% SRM.stats[360,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Trifunctional enzyme subunit beta, mitochondrial") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
-
+png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-TrifunctEnzyme.png", width = 400, height = 600)
+ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[360,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Trifunctional enzyme subunit beta, mitochondrial") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
+dev.off()

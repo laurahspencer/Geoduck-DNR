@@ -8,20 +8,16 @@ setwd("~/Documents/Roberts Lab/Geoduck-DNR/")
 SRMreport <- read.csv("Data/2017-08-11_Transition Results_LHS modified-noRT-pivoted.csv", header=FALSE, na.strings = "#N/A", stringsAsFactors = FALSE) # import local file
 SRMsequence <- read.csv("Data/2017-07-28_SRM-Sequence-final.csv", header=TRUE, stringsAsFactors = FALSE)
 sample.key <- read.csv("Data/2017-08-14-Geoduck-samples.csv", header=TRUE, stringsAsFactors = FALSE)
+dilution.curve <- read.csv("Data/2017-09-05_Dilution-Curve-Results.csv", header=TRUE, stringsAsFactors = FALSE)
+OutplantData <- read.csv("Data/Outplant-Temp-Data.csv", header=TRUE, stringsAsFactors =TRUE)
 SRMsamples <- noquote(as.character(c("G013", "G120", "G047", "G017", "G079", "G127", "G060", "G009", "G002", "G128", "G016", "G071-A", "G114", "G045", "G132", "G031", "G012", "G116", "G043", "G015", "G040", "G110", "G008", "G109", "G122", "G041", "G066", "G105", "G032", "G129", "G054", "G081", "G003", "G074", "G014", "G049", "G053", "G104", "G055", "G042", "G064", "G073", "G057", "G007", "G070", "G001", "G071-B", "G062")))
 
 ############ REPLACE REP NAMES WITH SAMPLE NAMES ###################################################################
 # I could also probably use the function merge() for this task
 
-SRMreport[1,] # view replicate names
-length(SRMreport[1,]) # Number of replicates I ran on mass spec
 rep.names <- SRMreport[1,] # create vector of replicate names
 rep.names.short <- noquote(gsub(' Area', '', rep.names)) # remove Area from rep name, and don't include quotes 
-rep.names.short # check to confirm correct names
 rep.names.short <- noquote(gsub('2017_July_10_bivalves_', '', rep.names.short)) #remove the extra long rep name that is a residual from the .raw file name
-length(rep.names.short)
-SRMsequence$Sample...rep.name
-noquote(as.character(SRMsequence$Sample...rep.name))
 repsTOsamples <- as.data.frame(SRMsequence[,c(2,3,5)])
 library(dplyr)
 repsTOsamples.filtered <- filter(repsTOsamples, repsTOsamples[,1] %in% rep.names.short)
@@ -31,17 +27,13 @@ samples.vector <- noquote(c(other.headers, samples, stringsAsFactors = FALSE))
 samples.vector <- samples.vector[-121]
 SRM.data <- SRMreport
 SRM.data[1,] <- samples.vector
-ncol(SRM.data) #confirm still have the correct # columns
 colnames(SRM.data) <- SRM.data[1,] #make first row column names
 
 ############ ANNOTATE SAMPLE NAMES WITH SITE & TREATMENT ##################################################################################
 
-head(sample.key)
-sample.key[,c(8,9)]
 repsTOsamples.filtered.annotated <- filter(sample.key[,c(8,9)], sample.key$PRVial %in% repsTOsamples.filtered$Comment) #pull site & treatment from sample key
-length(SRMsamples) # check # samples there should be total
-nrow(repsTOsamples.filtered.annotated) # check # samples is appropriate
-repsTOsamples.filtered.annotated # NOTE: missing 71-A & 71-B, need to fix 
+length(SRMsamples) == nrow(repsTOsamples.filtered.annotated) # should equal TRUE if I haven't lost any sample data
+repsTOsamples.filtered.annotated # ISSUE IDENTIFIED: missing 71-A & 71-B, need to fix 
 
 # Add G071-A & G071-B coding to the annotated key
 s71.A <- data.frame(matrix(0, ncol=2, nrow=1))
@@ -52,9 +44,7 @@ s71.B <- data.frame(matrix(0, ncol=2, nrow=1))
 s71.B[1,1] <- "G071.B"
 s71.B[1,2] <- "PG-E"
 colnames(s71.B) <- colnames(repsTOsamples.filtered.annotated)
-
-# row bind annotated key w/ 71 info
-sample.key.annotated <- rbind(repsTOsamples.filtered.annotated, s71.A, s71.B)
+sample.key.annotated <- rbind(repsTOsamples.filtered.annotated, s71.A, s71.B) # row bind annotated key w/ 71 info
 
 # Subset sample names for site & treatment combos
 CI.E <- sample.key.annotated[c(sample.key.annotated$Sample.Shorthand == "CI-E"),]
@@ -82,16 +72,16 @@ Bare.samples <- c(CI.B.samples, PG.B.samples, WB.B.samples, FB.B.samples)
 
 ############ CONVERT AREA DATA TO NUMERIC FORMAT #######################################################################################
 
-SRM.data.numeric <- SRM.data # First, change all area values to numeric, so I can average, etc. I know that my area data is from column 5 to 120 
+SRM.data.numeric <- SRM.data[-1,] # First, remove row #1 (excess info) & change all area values to numeric, so I can average, etc. I know that my area data is from column 5 to 120 
 SRM.data.numeric[,5:120] <- as.numeric( 
   as.character(
     unlist(
       SRM.data.numeric[,5:120])
   )
 )
-is.numeric(SRM.data.numeric[2,20]) # confirm area data is numeric, using a random cell. Should equal TRUE.
+is.numeric(SRM.data.numeric[5,20]) # confirm area data is numeric, using a random cell. Should equal TRUE.
 
-############ NAME EACH ROW WITH A UNIQUE TRANSITION ID ###############################################################################
+############ NAME EACH ROW WITH A UNIQUE TRANSITION ID ##############################################################
 nTransitions <- length(SRM.data.numeric$Transition) # How many transitions are there
 Transition.ID <- vector(length=nTransitions) # create empty vector with length= number of transitions
 for (i in 1:nTransitions) {  
@@ -99,10 +89,27 @@ for (i in 1:nTransitions) {
 Transition.ID # confirm correctly named transition IDs
 length(SRM.data.numeric$Transition) == length(Transition.ID) # confirm that I didn't lose any transitions
 row.names(SRM.data.numeric) <- Transition.ID # assign newly created transition IDs as row names
-tail(SRM.data.numeric) # confirm changes
 write.csv(SRM.data.numeric, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-NotNORM-annotated.csv") #write this file out for safe keeping
 
-############ CREATE NMDS PLOT ################################################################################################
+########### REMOVE POOR QUALITY PEPTIDES IDENTIFIED VIA SKYLINE & DILUTION CURVE RESULTS #############################
+# Poor quality, determined via Skyline due to lack of consistent signal as compared to other peptides in the protein: 
+  # Superoxide Dismutase: THGAPTDEER
+  # PDI: NNKPSDYQGGR
+  # Na/K: MVTGDNVNTAR
+# Poor quality, determined via Dilution curve
+  # HSP70: TTPSYVAFNDTER
+  # Peroxiredoxin: LVQAFQFTDK
+  # Ras-related Rab: QITMNDLPVGR & VVLVGDSGVGK
+  # Na/K: AQLWDTAGQER & MVTGDNVNTAR
+
+nrow(SRM.data.screened.noPRTC) / nrow(SRM.data[2:116,])
+
+
+SRM.data.screened <- SRM.data.numeric[!grepl(c("THGAPTDEER|NNKPSDYQGGR|MVTGDNVNTAR|TTPSYVAFNDTER|LVQAFQFTDK|QITMNDLPVGR|VVLVGDSGVGK|AQLWDTAGQER"), SRM.data.numeric$`Peptide Sequence`),]
+SRM.data.screened.noPRTC <- SRM.data.screened[!grepl("PRTC peptides", SRM.data.screened$`Protein Name`),]
+write.csv(SRM.data.screened.noPRTC, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-NotNORM-screenednoPRTC.csv")
+
+############ CREATE NMDS PLOT ########################################################################################
 
 #Load the source file for the biostats package, biostats.R script must be saved in working directory
 
@@ -110,7 +117,7 @@ source("References/biostats.R") #Either load the source R script or copy paste. 
 library(vegan)
 
 #Transpose the file so that rows and columns are switched 
-SRM.data.t <- t(SRM.data.numeric[2:116, -1:-4]) # t() function transposes, removes PRTC transitions, extraneous info
+SRM.data.t <- t(SRM.data.screened.noPRTC[, -1:-4]) # t() function transposes, removes PRTC transitions, extraneous info
 
 #Replace NA cells with 0; metaMDS() does not handle NA's 
 SRM.data.t.noNA <- SRM.data.t
@@ -124,7 +131,6 @@ SRM.nmds <- metaMDS(SRM.data.t.noNA, distance = 'bray', k = 2, trymax = 3000, au
 # distance= bray, (not sure what this means)
 # k= # of dimensions to assess
 # trymax = max # iterations to attempt if no solution is reached
-
 # Create Shepard plot, which shows scatter around the regression between the interpoint distances in the final configuration (i.e., the distances between each pair of communities) against their original dissimilarities.
 stressplot(SRM.nmds) 
 
@@ -135,21 +141,23 @@ plot(SRM.nmds)
 
 # Principal Component Analysis
 SRM.nmds.pca <- rda(SRM.data.t.noNA, scale = TRUE)
-SRM.nmds.pca1
-#inertia is the sum of all variance in transitions; eigenvalues sum to total inertia, aka each eigenvalue "explains" a certain proportion of the total variance. Percent that each eigenvalue is responsible for total variance is: eigenvalue/total inertia. For example, PC1/total inertia = 83%
-
 summary(SRM.nmds.pca)
 plot(SRM.nmds.pca, scaling = 3)
 dim(SRM.data.t.noNA)
 biplot(SRM.nmds.pca, scaling = -1)
 SRM.nmds.ca <- cca(SRM.data.t.noNA)
-SRM.nmds.ca
+plot(SRM.nmds.ca)
+#inertia is the sum of all variance in transitions; eigenvalues sum to total inertia, aka each eigenvalue "explains" a certain proportion of the total variance. Percent that each eigenvalue is responsible for total variance is: eigenvalue/total inertia. For example, PC1/total inertia = 83%
 
 
+# make figure with sample annotations https://stat.ethz.ch/pipermail/r-sig-ecology/2011-September/002371.html
+SRM.nmds.samples <- scores(SRM.nmds, display = "sites")
+SRM.nmds.samples.sorted <- SRM.nmds.samples[ order(row.names(SRM.nmds.samples)), ]
+rownames(SRM.nmds.samples.sorted)
 colors <- colorRampPalette(brewer.pal(8,"Dark2"))(48)
 
-### PLOTTING ALL REPS BY SAMPLE NUMBER & TREATMENT ### 
-plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1,2.7), ylim=c(-0.4,0.4), asp=NA, main= "NMDS of SRM data for technical rep QA")
+### PLOTTING ALL REPS WITH SAMPLE NUMBER ID'S ### 
+plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1,3), ylim=c(-0.5,0.5), asp=NA, main= "NMDS of SRM data for technical rep QA")
 text(SRM.nmds.samples.sorted[c("G001-A", "G001-B"),], labels=c("1A", "1B"), col=colors[1])
 text(SRM.nmds.samples.sorted[c("G002-A", "G002-B", "G002-C"),], labels=c("2A", "2B", "2C"), col=colors[2])
 text(SRM.nmds.samples.sorted[c("G003-A", "G003-B", "G003-C"),], labels=c("3A", "3B", "3C"), col=colors[3]) #G003-C is very different
@@ -200,28 +208,13 @@ text(SRM.nmds.samples.sorted[c("G129-A", "G129-B"),], labels=c("129A", "129B"), 
 text(SRM.nmds.samples.sorted[c("G132-A", "G132-C", "G132-D"),], labels=c("132A", "132C", "132D"), col=colors[48])
 
 
-
-# make figure with sample annotations https://stat.ethz.ch/pipermail/r-sig-ecology/2011-September/002371.html
-SRM.nmds.samples <- scores(SRM.nmds, display = "sites")
-SRM.nmds.samples.sorted <- SRM.nmds.samples[ order(row.names(SRM.nmds.samples)), ]
-rownames(SRM.nmds.samples.sorted)
-
-# Generate 50 distint color ID's in a vector for plotting NMDS data
-library(RColorBrewer)
-n <- 50
-qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
-col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-pie(rep(1,n), col=sample(col_vector, n))
-colors <- sample(col_vector, 50)
-
-### PLOTTING ALL REPS BY SAMPLE NUMBER & TREATMENT ### 
-plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1.5,3), ylim=c(-0.5,0.5), asp=NA)
+### PLOTTING ALL REPS COLOR CODED AND WITH TREATMENT SYMBOL ### 
 # symbol key
 # 15 = eelgrass = filled square
 # 21 = bare = open circle
-
+plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1,3), ylim=c(-0.5,0.5), asp=NA)
 points(SRM.nmds.samples.sorted[c("G001-A", "G001-B"),], col=colors[1], pch=15)
-points(SRM.nmds.samples.sorted[c("G002-A", "G002-B", "G002-C"),], col=colors[50], pch=15) #GOO2-B very diff
+points(SRM.nmds.samples.sorted[c("G002-A", "G002-B", "G002-C"),], col=colors[2], pch=15) #GOO2-B very diff
 points(SRM.nmds.samples.sorted[c("G003-A", "G003-B", "G003-C"),], col=colors[3], pch=15) #G003-C is very different
 points(SRM.nmds.samples.sorted[c("G007-A", "G007-B"),], col=colors[4], pch=15)
 points(SRM.nmds.samples.sorted[c("G008-A", "G008-B"),], col=colors[5], pch=15)
@@ -247,7 +240,7 @@ points(SRM.nmds.samples.sorted[c("G055-A", "G055-B"),], col=colors[24], pch=15) 
 points(SRM.nmds.samples.sorted[c("G057-A", "G057-B", "G057-C"),], col=colors[25], pch=21) #57-B BAD
 points(SRM.nmds.samples.sorted[c("G060-A", "G060-B"),], col=colors[26], pch=21) 
 points(SRM.nmds.samples.sorted[c("G062-B", "G062-C"),], col=colors[27], pch=21)
-points(SRM.nmds.samples.sorted[c("G064-A", "G064-B"),], col=colors[50], pch=21)
+points(SRM.nmds.samples.sorted[c("G064-A", "G064-B"),], col=colors[28], pch=21)
 points(SRM.nmds.samples.sorted[c("G066-A", "G066-B"),], col=colors[29], pch=21)
 points(SRM.nmds.samples.sorted[c("G070-A", "G070-B", "G070-C"),], col=colors[30], pch=21)
 points(SRM.nmds.samples.sorted[c("G071-A-A", "G071-A-B"),], col=colors[31], pch=15)
@@ -274,53 +267,114 @@ points(SRM.nmds.samples.sorted[c("G132-A", "G132-C", "G132-D"),], col=colors[48]
 
 # average sample technical reps.  (there's probably an easier way to do this to not manually enter the tech rep names for each sample, possibly via a loop?); remove reps that were poor quality as per NMDS
 
-G013 <- ave(SRM.data.numeric$'G013-A', SRM.data.numeric$'G013-C')
-G120 <- ave(SRM.data.numeric$`G120-A`, SRM.data.numeric$`G120-B`)
-G047 <- ave(SRM.data.numeric$`G047-A`, SRM.data.numeric$`G047-B`)
-G017 <- ave(SRM.data.numeric$`G017-A`, SRM.data.numeric$`G017-B`)
-G079 <- ave(SRM.data.numeric$`G079-A`, SRM.data.numeric$`G079-B`)
-G127 <- ave(SRM.data.numeric$`G127-A`, SRM.data.numeric$`G127-C`) #B removed
-G060 <- ave(SRM.data.numeric$`G060-A`, SRM.data.numeric$`G060-B`)
-G009 <- ave(SRM.data.numeric$`G009-A`, SRM.data.numeric$`G009-B`)
-G002 <- ave(SRM.data.numeric$`G002-B`, SRM.data.numeric$`G002-C`) #A removed
-G128 <- ave(SRM.data.numeric$`G128-A`, SRM.data.numeric$`G128-C`,SRM.data.numeric$`G128-D`)
-G071.A <- ave(SRM.data.numeric$`G071-A-A`, SRM.data.numeric$`G071-A-B`)
-G114 <- ave(SRM.data.numeric$`G114-A`, SRM.data.numeric$`G114-B`, SRM.data.numeric$`G114-remake-C`, SRM.data.numeric$`G114-remake-D`)
-G045 <- ave(SRM.data.numeric$`G045-A`, SRM.data.numeric$`G045-B`)
-G132 <- ave(SRM.data.numeric$`G132-A`, SRM.data.numeric$`G132-C`, SRM.data.numeric$`G132-D`)
-G031 <- ave(SRM.data.numeric$`G031-A`, SRM.data.numeric$`G031-B`, SRM.data.numeric$`G031-C`)
-G012 <- ave(SRM.data.numeric$`G012-A`, SRM.data.numeric$`G012-B`, SRM.data.numeric$`G012-C`)
-G116 <- ave(SRM.data.numeric$`G116-A`, SRM.data.numeric$`G116-B`)
-G043 <- ave(SRM.data.numeric$`G043-A`, SRM.data.numeric$`G043-B`)
-G015 <- ave(SRM.data.numeric$`G015-A`, SRM.data.numeric$`G015-B`)
-G040 <- ave(SRM.data.numeric$`G040-A`, SRM.data.numeric$`G040-B`)
-G110 <- ave(SRM.data.numeric$`G110-A`, SRM.data.numeric$`G110-B`)
-G008 <- ave(SRM.data.numeric$`G008-A`, SRM.data.numeric$`G008-B`)
-G109 <- ave(SRM.data.numeric$`G109-A`, SRM.data.numeric$`G109-C`)
-G122 <- ave(SRM.data.numeric$`G122-A`, SRM.data.numeric$`G122-B`)
-G041 <- ave(SRM.data.numeric$`G041-A`, SRM.data.numeric$`G041-B`)
-G066 <- ave(SRM.data.numeric$`G066-A`, SRM.data.numeric$`G066-B`)
-G105 <- ave(SRM.data.numeric$`G105-A`, SRM.data.numeric$`G105-B`)
-G032 <- ave(SRM.data.numeric$`G032-A`, SRM.data.numeric$`G032-B`)
-G129 <- ave(SRM.data.numeric$`G129-A`, SRM.data.numeric$`G129-B`)
-G054 <- ave(SRM.data.numeric$`G054-A`, SRM.data.numeric$`G054-B`)
-G081 <- ave(SRM.data.numeric$`G081-A`, SRM.data.numeric$`G081-B`)
-G003 <- ave(SRM.data.numeric$`G003-A`, SRM.data.numeric$`G003-B`) #C removed
-G074 <- ave(SRM.data.numeric$`G074-A`, SRM.data.numeric$`G074-B`)
-G014 <- ave(SRM.data.numeric$`G014-A`, SRM.data.numeric$`G014-B`)
-G049 <- ave(SRM.data.numeric$`G049-A`, SRM.data.numeric$`G049-B`)
-G053 <- ave(SRM.data.numeric$`G053-A`, SRM.data.numeric$`G053-remake-C`, SRM.data.numeric$`G053-remake-D`) #B removed 
-G104 <- ave(SRM.data.numeric$`G104-A`, SRM.data.numeric$`G104-remake-C`, SRM.data.numeric$`G104-remake-D`) #B removed
-G055 <- ave(SRM.data.numeric$`G055-A`, SRM.data.numeric$`G055-B`, SRM.data.numeric$`G055-C`)
-G042 <- ave(SRM.data.numeric$`G042-A`, SRM.data.numeric$`G042-B`) #C removed
-G064 <- ave(SRM.data.numeric$`G064-A`, SRM.data.numeric$`G064-B`)
-G057 <- ave(SRM.data.numeric$`G057-A`, SRM.data.numeric$`G057-C`)
-G007 <- ave(SRM.data.numeric$`G007-A`, SRM.data.numeric$`G007-B`)
-G070 <- ave(SRM.data.numeric$`G070-A`, SRM.data.numeric$`G070-B`, SRM.data.numeric$`G070-C`)
-G001 <- ave(SRM.data.numeric$`G001-A`, SRM.data.numeric$`G001-B`)
-G071.B <- ave(SRM.data.numeric$`G071-B-A`, SRM.data.numeric$`G071-B-B`)
-G062 <- ave(SRM.data.numeric$`G062-B`, SRM.data.numeric$`G062-C`)
-# removed G016, G073
+# Mean of tech reps
+G001 <- ave(SRM.data.screened.noPRTC$`G001-A`, SRM.data.screened.noPRTC$`G001-B`)
+G002 <- ave(SRM.data.screened.noPRTC$`G002-A`, SRM.data.screened.noPRTC$`G002-B`, SRM.data.screened.noPRTC$`G002-C`)
+G003 <- ave(SRM.data.screened.noPRTC$`G003-A`, SRM.data.screened.noPRTC$`G003-B`) #C removed
+G007 <- ave(SRM.data.screened.noPRTC$`G007-A`, SRM.data.screened.noPRTC$`G007-B`)
+G008 <- ave(SRM.data.screened.noPRTC$`G008-A`, SRM.data.screened.noPRTC$`G008-B`)
+G009 <- ave(SRM.data.screened.noPRTC$`G009-A`, SRM.data.screened.noPRTC$`G009-B`)
+G110 <- ave(SRM.data.screened.noPRTC$`G110-A`, SRM.data.screened.noPRTC$`G110-B`)
+G012 <- ave(SRM.data.screened.noPRTC$`G012-A`, SRM.data.screened.noPRTC$`G012-B`, SRM.data.screened.noPRTC$`G012-C`)
+G013 <- ave(SRM.data.screened.noPRTC$'G013-A', SRM.data.screened.noPRTC$'G013-C')
+G014 <- ave(SRM.data.screened.noPRTC$`G014-A`, SRM.data.screened.noPRTC$`G014-B`)
+G015 <- ave(SRM.data.screened.noPRTC$`G015-A`, SRM.data.screened.noPRTC$`G015-B`)
+G016 <- ave(SRM.data.screened.noPRTC$`G016-A`, SRM.data.screened.noPRTC$`G016-B`, SRM.data.screened.noPRTC$`G016-C`)
+G017 <- ave(SRM.data.screened.noPRTC$`G017-A`, SRM.data.screened.noPRTC$`G017-B`)
+G031 <- ave(SRM.data.screened.noPRTC$`G031-A`, SRM.data.screened.noPRTC$`G031-B`, SRM.data.screened.noPRTC$`G031-C`)
+G032 <- ave(SRM.data.screened.noPRTC$`G032-A`, SRM.data.screened.noPRTC$`G032-B`)
+G040 <- ave(SRM.data.screened.noPRTC$`G040-A`, SRM.data.screened.noPRTC$`G040-B`)
+G041 <- ave(SRM.data.screened.noPRTC$`G041-A`, SRM.data.screened.noPRTC$`G041-B`)
+G042 <- ave(SRM.data.screened.noPRTC$`G042-A`, SRM.data.screened.noPRTC$`G042-B`) #C removed
+G043 <- ave(SRM.data.screened.noPRTC$`G043-A`, SRM.data.screened.noPRTC$`G043-B`)
+G045 <- ave(SRM.data.screened.noPRTC$`G045-A`, SRM.data.screened.noPRTC$`G045-B`)
+G047 <- ave(SRM.data.screened.noPRTC$`G047-A`, SRM.data.screened.noPRTC$`G047-B`)
+G049 <- ave(SRM.data.screened.noPRTC$`G049-A`, SRM.data.screened.noPRTC$`G049-B`)
+G053 <- ave(SRM.data.screened.noPRTC$`G053-A`, SRM.data.screened.noPRTC$`G053-remake-C`, SRM.data.screened.noPRTC$`G053-remake-D`) #B removed 
+G054 <- ave(SRM.data.screened.noPRTC$`G054-A`, SRM.data.screened.noPRTC$`G054-B`)
+G055 <- ave(SRM.data.screened.noPRTC$`G055-A`, SRM.data.screened.noPRTC$`G055-B`, SRM.data.screened.noPRTC$`G055-C`)
+G057 <- ave(SRM.data.screened.noPRTC$`G057-A`, SRM.data.screened.noPRTC$`G057-C`) #B removed
+G060 <- ave(SRM.data.screened.noPRTC$`G060-A`, SRM.data.screened.noPRTC$`G060-B`)
+G062 <- ave(SRM.data.screened.noPRTC$`G062-B`, SRM.data.screened.noPRTC$`G062-C`)
+G064 <- ave(SRM.data.screened.noPRTC$`G064-A`, SRM.data.screened.noPRTC$`G064-B`)
+G066 <- ave(SRM.data.screened.noPRTC$`G066-A`, SRM.data.screened.noPRTC$`G066-B`)
+G070 <- ave(SRM.data.screened.noPRTC$`G070-A`, SRM.data.screened.noPRTC$`G070-B`, SRM.data.screened.noPRTC$`G070-C`)
+G071.A <- ave(SRM.data.screened.noPRTC$`G071-A-A`, SRM.data.screened.noPRTC$`G071-A-B`)
+G071.B <- ave(SRM.data.screened.noPRTC$`G071-B-A`, SRM.data.screened.noPRTC$`G071-B-B`)
+G073 <- ave(SRM.data.screened.noPRTC$`G073-A`, SRM.data.screened.noPRTC$`G073-B`, SRM.data.numeric$`G073-C`)
+G074 <- ave(SRM.data.screened.noPRTC$`G074-A`, SRM.data.screened.noPRTC$`G074-B`)
+G079 <- ave(SRM.data.screened.noPRTC$`G079-A`, SRM.data.screened.noPRTC$`G079-B`)
+G081 <- ave(SRM.data.screened.noPRTC$`G081-A`, SRM.data.screened.noPRTC$`G081-B`)
+G104 <- ave(SRM.data.screened.noPRTC$`G104-A`, SRM.data.screened.noPRTC$`G104-remake-C`, SRM.data.screened.noPRTC$`G104-remake-D`) #B removed
+G105 <- ave(SRM.data.screened.noPRTC$`G105-A`, SRM.data.screened.noPRTC$`G105-B`)
+G109 <- ave(SRM.data.screened.noPRTC$`G109-A`, SRM.data.screened.noPRTC$`G109-C`)
+G114 <- ave(SRM.data.screened.noPRTC$`G114-A`, SRM.data.screened.noPRTC$`G114-B`, SRM.data.screened.noPRTC$`G114-remake-C`, SRM.data.screened.noPRTC$`G114-remake-D`)
+G116 <- ave(SRM.data.screened.noPRTC$`G116-A`, SRM.data.screened.noPRTC$`G116-B`)
+G120 <- ave(SRM.data.screened.noPRTC$`G120-A`, SRM.data.screened.noPRTC$`G120-B`)
+G122 <- ave(SRM.data.screened.noPRTC$`G122-A`, SRM.data.screened.noPRTC$`G122-B`)
+G127 <- ave(SRM.data.screened.noPRTC$`G127-A`, SRM.data.screened.noPRTC$`G127-C`) #B removed
+G128 <- ave(SRM.data.screened.noPRTC$`G128-A`, SRM.data.screened.noPRTC$`G128-C`,SRM.data.screened.noPRTC$`G128-D`)
+G129 <- ave(SRM.data.screened.noPRTC$`G129-A`, SRM.data.screened.noPRTC$`G129-B`)
+G132 <- ave(SRM.data.screened.noPRTC$`G132-A`, SRM.data.screened.noPRTC$`G132-C`, SRM.data.screened.noPRTC$`G132-D`)
+# Tech reps removed: 3C, 42C, 53B, 57B, 104B, 127B
 
-SRM.data.mean <- cbind.data.frame(rownames(SRM.data.numeric), G013, G120, G047, G017, G079, G127, G060, G009, G002, G128, G071.A, G114, G045, G132, G031, G012, G116, G043, G015, G040, G110, G008, G109, G122, G041, G066, G105, G032, G129, G054, G081, G003, G074, G014, G049, G053, G104, G055, G042, G064, G057, G007, G070,  G001, G071.B, G062) # combine all tech. replicate mean vectors into new data frame 
+# Entire sample removed: 73
+PG.E.samples <- PG.E.samples[!PG.E.samples %in% "G073"] #revised PG.E.sample list 
+
+SRM.data.mean <- cbind.data.frame(rownames(SRM.data.screened.noPRTC), G001,G002,G003,G007,G008,G009,G110,G012,G013,G014,G015,G016,G017,G031,G032,G040,G041,G042,G043,G045,G047,G049,G053,G054,G055,G057,G060,G062,G064,G066,G070,G071.A,G071.B,G074,G079,G081,G104,G105,G109,G114,G116,G120,G122,G127,G128,G129,G132)
+SRM.data.mean <- data.frame(SRM.data.mean[,-1], row.names=SRM.data.mean[,1]) #make first column row names, and delete first column
 write.csv(SRM.data.mean, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-meanBYsample.csv")
+View(SRM.data.mean)
+
+require(plotrix)
+# Standard error for tech reps ###FYI THIS IS NOT WORKING !!!!!!!!!!!!
+G001.err <- std.error(c(SRM.data.screened.noPRTC$`G001-A`, SRM.data.screened.noPRTC$`G001-B`))
+G002.err <- std.error(c(SRM.data.screened.noPRTC$`G002-A`, SRM.data.screened.noPRTC$`G002-B`, SRM.data.screened.noPRTC$`G002-C`))
+G003.err <- std.error(c(SRM.data.screened.noPRTC$`G003-A`, SRM.data.screened.noPRTC$`G003-B`)) #C removed
+G007.err <- std.error(c(SRM.data.screened.noPRTC$`G007-A`, SRM.data.screened.noPRTC$`G007-B`))
+G008.err <- std.error(c(SRM.data.screened.noPRTC$`G008-A`, SRM.data.screened.noPRTC$`G008-B`))
+G009.err <- std.error(c(SRM.data.screened.noPRTC$`G009-A`, SRM.data.screened.noPRTC$`G009-B`))
+G110.err <- std.error(c(SRM.data.screened.noPRTC$`G110-A`, SRM.data.screened.noPRTC$`G110-B`))
+G012.err <- std.error(c(SRM.data.screened.noPRTC$`G012-A`, SRM.data.screened.noPRTC$`G012-B`, SRM.data.screened.noPRTC$`G012-C`))
+G013.err <- std.error(c(SRM.data.screened.noPRTC$'G013-A', SRM.data.screened.noPRTC$'G013-C'))
+G014.err <- std.error(c(SRM.data.screened.noPRTC$`G014-A`, SRM.data.screened.noPRTC$`G014-B`))
+G015.err <- std.error(c(SRM.data.screened.noPRTC$`G015-A`, SRM.data.screened.noPRTC$`G015-B`))
+G016.err <- std.error(c(SRM.data.screened.noPRTC$`G016-A`, SRM.data.screened.noPRTC$`G016-B`, SRM.data.screened.noPRTC$`G016-C`))
+G017.err <- std.error(c(SRM.data.screened.noPRTC$`G017-A`, SRM.data.screened.noPRTC$`G017-B`))
+G031.err <- std.error(c(SRM.data.screened.noPRTC$`G031-A`, SRM.data.screened.noPRTC$`G031-B`, SRM.data.screened.noPRTC$`G031-C`))
+G032.err <- std.error(c(SRM.data.screened.noPRTC$`G032-A`, SRM.data.screened.noPRTC$`G032-B`))
+G040.err <- std.error(c(SRM.data.screened.noPRTC$`G040-A`, SRM.data.screened.noPRTC$`G040-B`))
+G041.err <- std.error(c(SRM.data.screened.noPRTC$`G041-A`, SRM.data.screened.noPRTC$`G041-B`))
+G042.err <- std.error(c(SRM.data.screened.noPRTC$`G042-A`, SRM.data.screened.noPRTC$`G042-B`)) #C removed
+G043.err <- std.error(c(SRM.data.screened.noPRTC$`G043-A`, SRM.data.screened.noPRTC$`G043-B`))
+G045.err <- std.error(c(SRM.data.screened.noPRTC$`G045-A`, SRM.data.screened.noPRTC$`G045-B`))
+G047.err <- std.error(c(SRM.data.screened.noPRTC$`G047-A`, SRM.data.screened.noPRTC$`G047-B`))
+G049.err <- std.error(c(SRM.data.screened.noPRTC$`G049-A`, SRM.data.screened.noPRTC$`G049-B`))
+G053.err <- std.error(c(SRM.data.screened.noPRTC$`G053-A`, SRM.data.screened.noPRTC$`G053-remake-C`, SRM.data.screened.noPRTC$`G053-remake-D`)) #B removed 
+G054.err <- std.error(c(SRM.data.screened.noPRTC$`G054-A`, SRM.data.screened.noPRTC$`G054-B`))
+G055.err <- std.error(c(SRM.data.screened.noPRTC$`G055-A`, SRM.data.screened.noPRTC$`G055-B`, SRM.data.screened.noPRTC$`G055-C`))
+G057.err <- std.error(c(SRM.data.screened.noPRTC$`G057-A`, SRM.data.screened.noPRTC$`G057-C`)) #B removed
+G060.err <- std.error(c(SRM.data.screened.noPRTC$`G060-A`, SRM.data.screened.noPRTC$`G060-B`))
+G062.err <- std.error(c(SRM.data.screened.noPRTC$`G062-B`, SRM.data.screened.noPRTC$`G062-C`))
+G064.err <- std.error(c(SRM.data.screened.noPRTC$`G064-A`, SRM.data.screened.noPRTC$`G064-B`))
+G066.err <- std.error(c(SRM.data.screened.noPRTC$`G066-A`, SRM.data.screened.noPRTC$`G066-B`))
+G070.err <- std.error(c(SRM.data.screened.noPRTC$`G070-A`, SRM.data.screened.noPRTC$`G070-B`, SRM.data.screened.noPRTC$`G070-C`))
+G071.A.err <- std.error(cor(SRM.data.screened.noPRTC$`G071-A-A`, SRM.data.screened.noPRTC$`G071-A-B`))
+G071.B.err <- std.error(cor(SRM.data.screened.noPRTC$`G071-B-A`, SRM.data.screened.noPRTC$`G071-B-B`))
+G073.err <- std.error(c(SRM.data.screened.noPRTC$`G073-A`, SRM.data.screened.noPRTC$`G073-B`, SRM.data.numeric$`G073-C`))
+G074.err <- std.error(c(SRM.data.screened.noPRTC$`G074-A`, SRM.data.screened.noPRTC$`G074-B`))
+G079.err <- std.error(c(SRM.data.screened.noPRTC$`G079-A`, SRM.data.screened.noPRTC$`G079-B`))
+G081.err <- std.error(c(SRM.data.screened.noPRTC$`G081-A`, SRM.data.screened.noPRTC$`G081-B`))
+G104.err <- std.error(c(SRM.data.screened.noPRTC$`G104-A`, SRM.data.screened.noPRTC$`G104-remake-C`, SRM.data.screened.noPRTC$`G104-remake-D`)) #B removed
+G105.err <- std.error(c(SRM.data.screened.noPRTC$`G105-A`, SRM.data.screened.noPRTC$`G105-B`))
+G109.err <- std.error(c(SRM.data.screened.noPRTC$`G109-A`, SRM.data.screened.noPRTC$`G109-C`))
+G114.err <- std.error(c(SRM.data.screened.noPRTC$`G114-A`, SRM.data.screened.noPRTC$`G114-B`, SRM.data.screened.noPRTC$`G114-remake-C`, SRM.data.screened.noPRTC$`G114-remake-D`))
+G116.err <- std.error(c(SRM.data.screened.noPRTC$`G116-A`, SRM.data.screened.noPRTC$`G116-B`))
+G120.err <- std.error(c(SRM.data.screened.noPRTC$`G120-A`, SRM.data.screened.noPRTC$`G120-B`))
+G122.err <- std.error(c(SRM.data.screened.noPRTC$`G122-A`, SRM.data.screened.noPRTC$`G122-B`))
+G127.err <- std.error(c(SRM.data.screened.noPRTC$`G127-A`, SRM.data.screened.noPRTC$`G127-C`)) #B removed
+G128.err <- std.error(c(SRM.data.screened.noPRTC$`G128-A`, SRM.data.screened.noPRTC$`G128-C`,SRM.data.screened.noPRTC$`G128-D`))
+G129.err <- std.error(c(SRM.data.screened.noPRTC$`G129-A`, SRM.data.screened.noPRTC$`G129-B`))
+G132.err <- std.error(c(SRM.data.screened.noPRTC$`G132-A`, SRM.data.screened.noPRTC$`G132-C`, SRM.data.screened.noPRTC$`G132-D`))
+
+SRM.data.stderr <- cbind.data.frame(rownames(SRM.data.screened.noPRTC), G001.err,G002.err,G003.err,G007.err,G008.err,G009.err,G110.err,G012.err,G013.err,G014.err,G015.err,G016.err,G017.err,G031.err,G032.err,G040.err,G041.err,G042.err,G043.err,G045.err,G047.err,G049.err,G053.err,G054.err,G055.err,G057.err,G060.err,G062.err,G064.err,G066.err,G070.err,G071.A.err,G071.B.err,G073.err, G074.err,G079.err,G081.err,G104.err,G105.err,G109.err,G114.err,G116.err,G120.err,G122.err,G127.err,G128.err,G129.err,G132.err)
