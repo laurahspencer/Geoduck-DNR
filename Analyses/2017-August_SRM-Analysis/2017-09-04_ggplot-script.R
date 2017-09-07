@@ -1,0 +1,229 @@
+
+######## CALCULATE & PLOT MEAN & ERROR FOR SAMPLES WITHIN SITE FOR EACH PROTEIN, PLOT ########
+
+# Use data4anosim.noNA dataset 
+### melt un-meaned data, so i can run stats in a different way
+
+library(reshape2)
+data.melted <- melt(data4anosim.noNA, id=c("SAMPLE", "SITE", "TREATMENT", "BOTH"), variable.name = "Transition", value.name = "Area")
+View(data.melted)
+
+#### MERGE PROTEIN NAMES BACK TO ABUNDANCE DATA ##### 
+
+SRM.proteins <- data.frame(SRM.data.numeric[2:142,1:4]) #protein name to each transition
+SRM.proteins[,1] <- sub(" cds.*", "", SRM.proteins[,1])
+data.melted.plus <- merge(x=data.melted, y=SRM.proteins, by.x = "Transition", by.y = "row.names", all.x=TRUE, all.y=FALSE)
+colnames(data.melted.plus)[1] <- "Pep.Trans"
+View(data.melted.plus)
+write.csv(data.melted.plus, file="Data/2017-09-04_SRM-data-melted-annotated.csv")
+
+#### FUNCTION FROM http://www.sthda.com/english/wiki/ggplot2-error-bars-quick-start-guide-r-software-and-data-visualization
+#+++++++++++++++++++++++++
+# Function to calculate the mean and the standard deviation
+# for each group
+#+++++++++++++++++++++++++
+# data : a data frame
+# varname : the name of a column containing the variable
+#to be summariezed
+# groupnames : vector of column names to be used as
+# grouping variables
+data_summary <- function(data, varname, groupnames){
+  require(plyr)
+  require(plotrix)
+  summary_func <- function(x, col){
+    c(mean = mean(x[[col]], na.rm=TRUE),
+      st.err = std.error(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("mean" = varname))
+  return(data_sum)
+}
+SRM.stats <-  data_summary(data.melted.plus, varname="Area", groupnames=c("SITE", "Protein.Name", "Peptide.Sequence", "Pep.Trans")) #run program with my data
+View(SRM.stats)
+
+#### PLOT
+# Arachidonate 5-lipoxygenase
+ggplot(subset(SRM.stats, Protein.Name %in% "Arachidonate 5-lipoxygenase"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Arachidonate 5-lipoxygenase"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Arachidonate 5-lipoxygenase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+# Catalase
+ggplot(subset(SRM.stats, Protein.Name %in% "Catalase"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Catalase"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Catalase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+# Cytochrome P450
+ggplot(subset(SRM.stats, Protein.Name %in% "Cytochrome P450"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Cytochrome P450"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Cytochrome P450"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+# Glycogen phosphorylase, muscle form
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Glycogen phosphorylase, muscle form"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Glycogen phosphorylase, muscle form"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Glycogen phosphorylase, muscle form"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+# Heat shock 70 kDa protein
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock 70 kDa protein"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock 70 kDa protein"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock 70 kDa protein"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+
+# Heat shock protein HSP 90-alpha
+ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock protein HSP 90-alpha"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock protein HSP 90-alpha"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock protein HSP 90-alpha"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+
+# Peroxiredoxin-1
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Peroxiredoxin-1"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Peroxiredoxin-1"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Peroxiredoxin-1"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+
+# Protein disulfide-isomerase (PDI)
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Protein disulfide-isomerase (PDI)"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Protein disulfide-isomerase (PDI)"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Protein disulfide-isomerase (PDI)"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+
+# Puromycin-sensitive aminopeptidase
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Puromycin-sensitive aminopeptidase"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Puromycin-sensitive aminopeptidase"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Puromycin-sensitive aminopeptidase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+
+# Ras-related protein Rab-11B
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Ras-related protein Rab-11B"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Ras-related protein Rab-11B"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Ras-related protein Rab-11B"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+
+# Sodium/potassium-transporting ATPase subunit alpha-4
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Sodium/potassium-transporting ATPase subunit alpha-4"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Sodium/potassium-transporting ATPase subunit alpha-4"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Sodium/potassium-transporting ATPase subunit alpha-4"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+# Superoxide dismutase
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Superoxide dismutase"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Superoxide dismutase"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Superoxide dismutase"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+# Trifunctional enzyme subunit beta, mitochondrial
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Trifunctional enzyme subunit beta, mitochondrial"), aes(x=Protein.Name, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Trifunctional enzyme subunit beta, mitochondrial"), aes(x=Peptide.Sequence, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+
+ggplot(subset(SRM.stats, Protein.Name %in% "Trifunctional enzyme subunit beta, mitochondrial"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
+  geom_bar(stat="identity", color="black", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
+

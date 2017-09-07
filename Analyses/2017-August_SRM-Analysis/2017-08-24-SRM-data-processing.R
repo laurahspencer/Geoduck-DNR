@@ -1,3 +1,5 @@
+
+
 ### IMPORT DATASET ### 
 ### Note: this script works with datasets downloaded from Skyline.  Skyline data is exported as report, and this script works with data with the following metrics: Protein Name, Transitions, Peptide Sequence, Fragment Ion, Peptide Retention Time, Area
 
@@ -34,7 +36,7 @@ SRM.data[1,] <- samples.vector
 ncol(SRM.data) #confirm still have the correct # columns
 colnames(SRM.data) <- SRM.data[1,] #make first row column names
 
-### ANNOTATE SAMPLE NAMES WITH SITE & TREATMENT ########## needs work
+### ANNOTATE SAMPLE NAMES WITH SITE & TREATMENT ########## 
 
 head(sample.key)
 sample.key[,c(8,9)]
@@ -199,7 +201,7 @@ SRM.PRTC.adjusted <- cbind.data.frame(
 ncol(SRM.PRTC.adjusted) == ncol(SRM.PRTC.good[,-1:-4])
 
 # Plot transition abundance pre- and post- adjustment
-png("Analyses/2017-August_SRM-Analysis/PRTC-pre-post-adjusted-1.png", width = 1000, height = 1200, units = "px")
+# png("Analyses/2017-August_SRM-Analysis/PRTC-pre-post-adjusted-1.png", width = 1000, height = 1200, units = "px")
 par(mfrow=c(6,2))
 barplot(as.matrix(SRM.PRTC.adjusted[1,]), main=rownames(SRM.PRTC.adjusted[1,])) 
 barplot(as.matrix(SRM.PRTC.good[1,-1:-4]))
@@ -215,7 +217,7 @@ barplot(as.matrix(SRM.PRTC.adjusted[6,]), main=rownames(SRM.PRTC.adjusted[6,]))
 barplot(as.matrix(SRM.PRTC.good[6,-1:-4])) 
 dev.off()
 
-png("Analyses/2017-August_SRM-Analysis/PRTC-pre-post-adjusted-2.png", width = 1000, height = 1200, units = "px")
+# png("Analyses/2017-August_SRM-Analysis/PRTC-pre-post-adjusted-2.png", width = 1000, height = 1200, units = "px")
 par(mfrow=c(6,2))
 barplot(as.matrix(SRM.PRTC.adjusted[7,]), main=rownames(SRM.PRTC.adjusted[7,])) 
 barplot(as.matrix(SRM.PRTC.good[7,-1:-4]))
@@ -269,7 +271,7 @@ for (i in SRM.PRTC.adjusted.t.cv) {
 
 #Create dataframe with coefficient of variation for each transition, for all samples then by batches (a,b,c,d)
 PRTC.cv.comparison <- cbind.data.frame(transitions=colnames(SRM.PRTC.t), Not.Adjusted=as.integer(SRM.PRTC.t.cv), A=as.integer(SRM.PRTC.a.t.cv), B=as.integer(SRM.PRTC.b.t.cv), C=as.integer(SRM.PRTC.c.t.cv), D=as.integer(SRM.PRTC.d.t.cv), Adjusted=as.integer(SRM.PRTC.adjusted.t.cv))
-PRTC.cv.comparison #this is the result
+View(PRTC.cv.comparison) #this is the result
 
 ### NORMALIZE ASSAY DATA BASED ON PRTC ABUNDANCE 
 
@@ -705,6 +707,8 @@ plot(SRM.mean.s.log.nmds)
 eigen.s.log <- envfit(SRM.mean.s.log.nmds$points, SRM.data.mean.s.t.noNA, perm=1000)
 eigen.s.log
 
+# Start here !!!!!!!!!!!
+
 #ANOSIM
 rownames(SRM.data.mean.stringent.t) <- sub(".s", "", rownames(SRM.data.mean.stringent.t))
 
@@ -753,7 +757,7 @@ PRTC.anos<-anosim(sdms.vegdist, grouping=data4anosim.s$PRTC.BATCH)
 summary(PRTC.anos)
 plot(PRTC.anos)
 
-
+### stop here !!!!!!!!
 
 # make figure with sample annotations https://stat.ethz.ch/pipermail/r-sig-ecology/2011-September/002371.html
 SRM.nmds.mean.s.log.samples <- scores(SRM.mean.s.log.nmds, display = "sites")
@@ -809,10 +813,6 @@ samples4plots <- arrange(samples4plots, samples4plots$PRVial)
 
 SRM.data4plots <- rbind.data.frame(SRM.data.mean.ordered, Order=samples4plots$Order, Color=samples4plots$Color, Symbol=samples4plots$Symbol)
 SRM.data4plots.ordered <- as.matrix(SRM.data4plots[ ,order(SRM.data4plots[which(rownames(SRM.data4plots) == 'Order'), ]) ])
-
-# Write out data files for folks to help me troubleshoot
-write.csv(SRM.data4plots.ordered, file="Data/2017-08-31_SRM.data4plots.ordered.csv") #write this file out for safe keeping
-write.csv(SRM.proteins, file="Data/2017-08-31_SRM.proteins.csv") #write this file out for safe keeping
 
 
 # Where to find vectors of plot characteristics in SRM.data4plots.ordered 
