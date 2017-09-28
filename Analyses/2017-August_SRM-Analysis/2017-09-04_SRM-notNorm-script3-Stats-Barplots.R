@@ -7,13 +7,11 @@ View(data4anosim.noNA)
 #melt data to prepare for ggplot
 library(reshape2)
 data.melted <- melt(data4anosim.noNA, id=c("SAMPLE", "SITE", "TREATMENT", "BOTH"), variable.name = "Transition", value.name = "Area")
-
+View(data.melted)
 ####### check out total abundance & other stats by site
 TotAbund.SITE <- do.call(data.frame, aggregate(Area ~ SITE, data.melted, function(x) c(sum=sum(x), sd=sd(x), range=range(x), min=min(x), max=max(x))))
 
-View(data.melted)
-
-nav#Bar plot showing total abundance by site, with error bars
+#Bar plot showing total abundance by site, with error bars
 library(ggplot2)
 TotSum.bar <- ggplot(TotAbund.SITE, aes(x=SITE, y=Area.sum, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Total Abundance by Site") +
@@ -55,6 +53,7 @@ data.melted.plus <- merge(x=data.melted, y=SRM.proteins, by.x = "Transition", by
 colnames(data.melted.plus)[1] <- "Pep.Trans"
 write.csv(data.melted.plus, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-melted-annotated.csv")
 
+View(data.melted.plus)
 # Write program with summary statistics http://www.sthda.com/english/wiki/ggplot2-error-bars-quick-start-guide-r-software-and-data-visualization
 data_summary <- function(data, varname, groupnames){
   require(plyr)
@@ -69,11 +68,12 @@ data_summary <- function(data, varname, groupnames){
   return(data_sum)
 }
 SRM.stats <-  data_summary(data.melted.plus, varname="Area", groupnames=c("SITE", "Protein.Name", "Peptide.Sequence", "Pep.Trans")) #run program with my data
-View(SRM.stats)
 write.csv(SRM.stats, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-summary-stats.csv")
 
 #### PLOT SITE MEANS FOR EACH PROTEIN, BROKEN INTO PROTEIN, PEPTIDE & TRANSITION
 SRM.stats4plots <- SRM.stats[grepl(c("APGLPAQIK y5|AGELGGSDPDYAMR y6|QSLLPFGATGPR y8|APNSFNLR y5|IINEPTAAALAYGLDK y12|GVVDSEDLPLNISR y6|ALFIIDDK y4|DNVVVIGFFK y7|SIQQSVENIR y6|STIGVEFATR y7|TVIEPMAGDGLR y8|ISLTGPHSIIGR y8|FNLWGGSLSLGHPFGATGVR y8"), SRM.stats$Pep.Trans),]
+levels(SRM.stats4plots$SITE)
+SRM.stats4plots$SITE <- factor(SRM.stats4plots$SITE, levels=c("PG", "FB", "CI", "WB"))
 
 library(ggplot2)
 
@@ -191,9 +191,13 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock 70 kDa protein"), aes(x=P
 dev.off()
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP70.png", width = 400, height = 600)
 ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[313,2]), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
-  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 70") +
-  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"), legend.title=element_text(size=20), legend.text=element_text(size=20))
-dev.off()
+  geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 70, mean abundance by site") +
+  geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + 
+  theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"), legend.title=element_text(size=25), legend.text=element_text(size=30), axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank(), legend.position = "bottom") + 
+  guides(fill=guide_legend(
+    keywidth=0.3,
+    keyheight=0.5,
+    default.unit="inch"))
 
 # Heat shock protein HSP 90-alpha
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP90Pro.png")
@@ -212,6 +216,7 @@ ggplot(subset(SRM.stats, Protein.Name %in% "Heat shock protein HSP 90-alpha"), a
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9))
 dev.off()
 png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-plot-HSP90.png", width = 400, height = 600)
+
 ggplot(subset(SRM.stats4plots, Protein.Name %in% "Heat shock protein HSP 90-alpha"), aes(x=Pep.Trans, y=Area, fill=SITE)) + 
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Heat shock 90") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
@@ -391,3 +396,10 @@ ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[360,2]), aes(x=Pep.Tr
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Trifunctional enzyme subunit beta, mitochondrial") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
 dev.off()
+
+
+
+# attempting to plot water quality data 
+Outplant.melted <- melt(OutplantData[1:10,-1], id=c("Habitat", "Site"), variable.name=c("MeanDO", "MeanT"), value.name = "Measurement")
+colnames(OutplantData) <- c("Outplant", "Site", "Habitat", "MeanT", "MeanDO")
+ggplot(OutplantData[1:10,-1], aes=(x=Site, y=))

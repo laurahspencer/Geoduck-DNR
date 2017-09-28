@@ -9,7 +9,7 @@ SRMreport <- read.csv("Data/2017-08-11_Transition Results_LHS modified-noRT-pivo
 SRMsequence <- read.csv("Data/2017-07-28_SRM-Sequence-final.csv", header=TRUE, stringsAsFactors = FALSE)
 sample.key <- read.csv("Data/2017-08-14-Geoduck-samples.csv", header=TRUE, stringsAsFactors = FALSE)
 dilution.curve <- read.csv("Data/2017-09-05_Dilution-Curve-Results.csv", header=TRUE, stringsAsFactors = FALSE)
-OutplantData <- read.csv("Data/Outplant-Temp-Data.csv", header=TRUE, stringsAsFactors =TRUE)
+OutplantData <- read.csv("Data/Outplant-Temp-Data.csv", header=TRUE, stringsAsFactors =FALSE)
 SRMsamples <- noquote(as.character(c("G013", "G120", "G047", "G017", "G079", "G127", "G060", "G009", "G002", "G128", "G016", "G071-A", "G114", "G045", "G132", "G031", "G012", "G116", "G043", "G015", "G040", "G110", "G008", "G109", "G122", "G041", "G066", "G105", "G032", "G129", "G054", "G081", "G003", "G074", "G014", "G049", "G053", "G104", "G055", "G042", "G064", "G073", "G057", "G007", "G070", "G001", "G071-B", "G062")))
 
 ############ REPLACE REP NAMES WITH SAMPLE NAMES ###################################################################
@@ -89,7 +89,7 @@ for (i in 1:nTransitions) {
 Transition.ID # confirm correctly named transition IDs
 length(SRM.data.numeric$Transition) == length(Transition.ID) # confirm that I didn't lose any transitions
 row.names(SRM.data.numeric) <- Transition.ID # assign newly created transition IDs as row names
-write.csv(SRM.data.numeric, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-NotNORM-annotated.csv") #write this file out for safe keeping
+# write.csv(SRM.data.numeric, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-NotNORM-annotated.csv") #write this file out for safe keeping
 
 ########### REMOVE POOR QUALITY PEPTIDES IDENTIFIED VIA SKYLINE & DILUTION CURVE RESULTS #############################
 # Poor quality, determined via Skyline due to lack of consistent signal as compared to other peptides in the protein: 
@@ -107,7 +107,7 @@ nrow(SRM.data.screened.noPRTC) / nrow(SRM.data[2:116,])
 
 SRM.data.screened <- SRM.data.numeric[!grepl(c("THGAPTDEER|NNKPSDYQGGR|MVTGDNVNTAR|TTPSYVAFNDTER|LVQAFQFTDK|QITMNDLPVGR|VVLVGDSGVGK|AQLWDTAGQER"), SRM.data.numeric$`Peptide Sequence`),]
 SRM.data.screened.noPRTC <- SRM.data.screened[!grepl("PRTC peptides", SRM.data.screened$`Protein Name`),]
-write.csv(SRM.data.screened.noPRTC, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-NotNORM-screenednoPRTC.csv")
+# write.csv(SRM.data.screened.noPRTC, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-NotNORM-screenednoPRTC.csv")
 
 ############ CREATE NMDS PLOT ########################################################################################
 
@@ -154,6 +154,7 @@ plot(SRM.nmds.ca)
 SRM.nmds.samples <- scores(SRM.nmds, display = "sites")
 SRM.nmds.samples.sorted <- SRM.nmds.samples[ order(row.names(SRM.nmds.samples)), ]
 rownames(SRM.nmds.samples.sorted)
+library(RColorBrewer)
 colors <- colorRampPalette(brewer.pal(8,"Dark2"))(48)
 
 ### PLOTTING ALL REPS WITH SAMPLE NUMBER ID'S ### 
@@ -206,6 +207,7 @@ text(SRM.nmds.samples.sorted[c("G127-A", "G127-B", "G127-C"),], labels=c("127A",
 text(SRM.nmds.samples.sorted[c("G128-A", "G128-C", "G128-D"),], labels=c("128A", "128C", "128D"), col=colors[46])
 text(SRM.nmds.samples.sorted[c("G129-A", "G129-B"),], labels=c("129A", "129B"), col=colors[47])
 text(SRM.nmds.samples.sorted[c("G132-A", "G132-C", "G132-D"),], labels=c("132A", "132C", "132D"), col=colors[48])
+
 
 
 ### PLOTTING ALL REPS COLOR CODED AND WITH TREATMENT SYMBOL ### 
@@ -323,7 +325,7 @@ PG.E.samples <- PG.E.samples[!PG.E.samples %in% "G073"] #revised PG.E.sample lis
 
 SRM.data.mean <- cbind.data.frame(rownames(SRM.data.screened.noPRTC), G001,G002,G003,G007,G008,G009,G110,G012,G013,G014,G015,G016,G017,G031,G032,G040,G041,G042,G043,G045,G047,G049,G053,G054,G055,G057,G060,G062,G064,G066,G070,G071.A,G071.B,G074,G079,G081,G104,G105,G109,G114,G116,G120,G122,G127,G128,G129,G132)
 SRM.data.mean <- data.frame(SRM.data.mean[,-1], row.names=SRM.data.mean[,1]) #make first column row names, and delete first column
-write.csv(SRM.data.mean, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-meanBYsample.csv")
+# write.csv(SRM.data.mean, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-meanBYsample.csv")
 View(SRM.data.mean)
 
 require(plotrix)
