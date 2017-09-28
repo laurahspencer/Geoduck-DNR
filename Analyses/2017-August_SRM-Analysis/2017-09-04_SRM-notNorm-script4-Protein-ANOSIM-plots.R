@@ -1,3 +1,5 @@
+# Script #4 in data processing for NOT NORMALIZED DATA
+
 ######## Run ANOSIM for each protein separately. Requires reshape2() library
 
 # Prepare data for anosim by protein, isolating the melted & annotated area data
@@ -173,19 +175,6 @@ png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-boxplot-PDI.png", wi
 ggplot(subset(data.melted.plus, Pep.Trans %in% "DNVVVIGFFK y5"), aes(x=SITE, y=Area, fill=SITE)) + 
   geom_boxplot(color="black", position = position_dodge()) + 
   ggtitle("Protein Disulfide Isomerase \nabundance by site") + 
-  theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"), axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) + 
-  guides(fill=FALSE) +
-  scale_fill_discrete(labels=c("Willapa Bay", "Case Inlet", "Fidalgo Bay", "Port Gamble")) + 
-  ylab("Protein Abundance (Peak Intensity)") +
-  coord_flip()
-dev.off()
-
-
-# Trifunctional Enzyme Subunit B
-png("Analyses/2017-September_SRM-results/2017-09-04_NotNORM-violinplot-TESB.png", width = 400, height = 500)
-ggplot(subset(data.melted.plus, Protein.Name %in% SRM.stats[360,2]), aes(x=SITE, y=Area, fill=SITE)) + 
-  geom_violin(color="black", position = position_dodge()) + 
-  ggtitle("Trifunctional enzyme subunit beta \nabundance by site") + 
   theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"), axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) + 
   guides(fill=FALSE) +
   scale_fill_discrete(labels=c("Willapa Bay", "Case Inlet", "Fidalgo Bay", "Port Gamble")) + 
