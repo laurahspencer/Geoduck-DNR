@@ -102,8 +102,6 @@ row.names(SRM.data.numeric) <- Transition.ID # assign newly created transition I
   # Ras-related Rab: QITMNDLPVGR & VVLVGDSGVGK
   # Na/K: AQLWDTAGQER & MVTGDNVNTAR
 
-nrow(SRM.data.screened.noPRTC) / nrow(SRM.data[2:116,])
-
 
 SRM.data.screened <- SRM.data.numeric[!grepl(c("THGAPTDEER|NNKPSDYQGGR|MVTGDNVNTAR|TTPSYVAFNDTER|LVQAFQFTDK|QITMNDLPVGR|VVLVGDSGVGK|AQLWDTAGQER"), SRM.data.numeric$`Peptide Sequence`),]
 SRM.data.screened.noPRTC <- SRM.data.screened[!grepl("PRTC peptides", SRM.data.screened$`Protein Name`),]
@@ -138,17 +136,6 @@ stressplot(SRM.nmds)
 # site (aka sample) in black circle
 # species (aka transition) in red ticks
 plot(SRM.nmds)
-
-# Principal Component Analysis
-SRM.nmds.pca <- rda(SRM.data.t.noNA, scale = TRUE)
-summary(SRM.nmds.pca)
-plot(SRM.nmds.pca, scaling = 3)
-dim(SRM.data.t.noNA)
-biplot(SRM.nmds.pca, scaling = -1)
-SRM.nmds.ca <- cca(SRM.data.t.noNA)
-plot(SRM.nmds.ca)
-#inertia is the sum of all variance in transitions; eigenvalues sum to total inertia, aka each eigenvalue "explains" a certain proportion of the total variance. Percent that each eigenvalue is responsible for total variance is: eigenvalue/total inertia. For example, PC1/total inertia = 83%
-
 
 # make figure with sample annotations https://stat.ethz.ch/pipermail/r-sig-ecology/2011-September/002371.html
 SRM.nmds.samples <- scores(SRM.nmds, display = "sites")
@@ -209,12 +196,11 @@ text(SRM.nmds.samples.sorted[c("G129-A", "G129-B"),], labels=c("129A", "129B"), 
 text(SRM.nmds.samples.sorted[c("G132-A", "G132-C", "G132-D"),], labels=c("132A", "132C", "132D"), col=colors[48])
 
 
-
 ### PLOTTING ALL REPS COLOR CODED AND WITH TREATMENT SYMBOL ### 
 # symbol key
 # 15 = eelgrass = filled square
 # 21 = bare = open circle
-plot.default(x=NULL, y=NULL, type="n", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1,3), ylim=c(-0.5,0.5), asp=NA)
+plot.default(x=NULL, y=NULL, type="n", main="NMDS of all SRM data, eelgrass vs. bare", xlab="NMDS axis 1", ylab="NMDS axis 2", xlim=c(-1,3), ylim=c(-0.5,0.5), asp=NA)
 points(SRM.nmds.samples.sorted[c("G001-A", "G001-B"),], col=colors[1], pch=15)
 points(SRM.nmds.samples.sorted[c("G002-A", "G002-B", "G002-C"),], col=colors[2], pch=15) #GOO2-B very diff
 points(SRM.nmds.samples.sorted[c("G003-A", "G003-B", "G003-C"),], col=colors[3], pch=15) #G003-C is very different
@@ -303,7 +289,7 @@ G066 <- ave(SRM.data.screened.noPRTC$`G066-A`, SRM.data.screened.noPRTC$`G066-B`
 G070 <- ave(SRM.data.screened.noPRTC$`G070-A`, SRM.data.screened.noPRTC$`G070-B`, SRM.data.screened.noPRTC$`G070-C`)
 G071.A <- ave(SRM.data.screened.noPRTC$`G071-A-A`, SRM.data.screened.noPRTC$`G071-A-B`)
 G071.B <- ave(SRM.data.screened.noPRTC$`G071-B-A`, SRM.data.screened.noPRTC$`G071-B-B`)
-G073 <- ave(SRM.data.screened.noPRTC$`G073-A`, SRM.data.screened.noPRTC$`G073-B`, SRM.data.numeric$`G073-C`)
+# G073 <- ave(SRM.data.screened.noPRTC$`G073-A`, SRM.data.screened.noPRTC$`G073-B`, SRM.data.numeric$`G073-C`)
 G074 <- ave(SRM.data.screened.noPRTC$`G074-A`, SRM.data.screened.noPRTC$`G074-B`)
 G079 <- ave(SRM.data.screened.noPRTC$`G079-A`, SRM.data.screened.noPRTC$`G079-B`)
 G081 <- ave(SRM.data.screened.noPRTC$`G081-A`, SRM.data.screened.noPRTC$`G081-B`)
@@ -327,6 +313,19 @@ SRM.data.mean <- cbind.data.frame(rownames(SRM.data.screened.noPRTC), G001,G002,
 SRM.data.mean <- data.frame(SRM.data.mean[,-1], row.names=SRM.data.mean[,1]) #make first column row names, and delete first column
 # write.csv(SRM.data.mean, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-meanBYsample.csv")
 View(SRM.data.mean)
+
+############# BONE YARD ############### 
+
+# Principal Component Analysis
+SRM.nmds.pca <- rda(SRM.data.t.noNA, scale = TRUE)
+summary(SRM.nmds.pca)
+plot(SRM.nmds.pca, scaling = 3)
+dim(SRM.data.t.noNA)
+biplot(SRM.nmds.pca, scaling = -1)
+SRM.nmds.ca <- cca(SRM.data.t.noNA)
+plot(SRM.nmds.ca)
+#inertia is the sum of all variance in transitions; eigenvalues sum to total inertia, aka each eigenvalue "explains" a certain proportion of the total variance. Percent that each eigenvalue is responsible for total variance is: eigenvalue/total inertia. For example, PC1/total inertia = 83%
+
 
 require(plotrix)
 # Standard error for tech reps ###FYI THIS IS NOT WORKING !!!!!!!!!!!!

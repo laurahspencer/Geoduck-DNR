@@ -2,12 +2,19 @@
 
 ######## CALCULATE & PLOT MEAN & STANDARD ERROR FOR SAMPLES BY SITE FOR EACH PROTEIN ########
 # Use data4anosim.noNA dataset 
-View(data4anosim.noNA)
-
 #melt data to prepare for ggplot
 library(reshape2)
 data.melted <- melt(data4anosim.noNA, id=c("SAMPLE", "SITE", "TREATMENT", "BOTH"), variable.name = "Transition", value.name = "Area")
-View(data.melted)
+
+# Merge protein names back to abundance data
+SRM.proteins <- data.frame(SRM.data.screened.noPRTC[,1:4]) #protein name to each transition
+SRM.proteins[,1] <- sub(" cds.*", "", SRM.proteins[,1])
+data.melted.plus <- merge(x=data.melted, y=SRM.proteins, by.x = "Transition", by.y = "row.names", all.x=TRUE, all.y=FALSE)
+colnames(data.melted.plus)[1] <- "Pep.Trans"
+write.csv(data.melted.plus, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-melted-annotated.csv")
+
+####### Can move to Script #4 if you only want to see ANOSIM/plots based on proteins ########
+
 ####### check out total abundance & other stats by site
 TotAbund.SITE <- do.call(data.frame, aggregate(Area ~ SITE, data.melted, function(x) c(sum=sum(x), sd=sd(x), range=range(x), min=min(x), max=max(x))))
 
@@ -22,7 +29,6 @@ ggplot(data.melted, aes(SITE, Area)) + geom_boxplot(aes(colour=SAMPLE)) + ggtitl
 ggplot(data.melted, aes(SITE, Area)) + geom_violin(aes(colour=SAMPLE)) + ggtitle("Abundance Distribution in each sample, grouped by site")
 ggplot(data.melted, aes(SITE, Area)) + geom_boxplot(aes(colour=TREATMENT)) + ggtitle("Abundance Distribution in each treatment, grouped by site")
 ggplot(data.melted, aes(SITE, Area)) + geom_violin(aes(colour=TREATMENT)) + ggtitle("Abundance Distribution in each treatment, grouped by site")
-
 
 #Log+1 transform summary data for plotting purposes
 data.melted.log <- data.melted
@@ -46,14 +52,6 @@ area.log.box.trmt
 dev.off()
 #######
 
-# Merge protein names back to abundance data
-SRM.proteins <- data.frame(SRM.data.screened.noPRTC[,1:4]) #protein name to each transition
-SRM.proteins[,1] <- sub(" cds.*", "", SRM.proteins[,1])
-data.melted.plus <- merge(x=data.melted, y=SRM.proteins, by.x = "Transition", by.y = "row.names", all.x=TRUE, all.y=FALSE)
-colnames(data.melted.plus)[1] <- "Pep.Trans"
-write.csv(data.melted.plus, file="Analyses/2017-September_SRM-results/2017-09-04_SRM-data-notNORM-melted-annotated.csv")
-
-View(data.melted.plus)
 # Write program with summary statistics http://www.sthda.com/english/wiki/ggplot2-error-bars-quick-start-guide-r-software-and-data-visualization
 data_summary <- function(data, varname, groupnames){
   require(plyr)
@@ -396,10 +394,3 @@ ggplot(subset(SRM.stats4plots, Protein.Name %in% SRM.stats[360,2]), aes(x=Pep.Tr
   geom_bar(stat="identity", color="black", position = position_dodge()) + ggtitle("Trifunctional enzyme subunit beta, mitochondrial") +
   geom_errorbar(aes(ymin=Area-st.err, ymax=Area+st.err), width=.2, position=position_dodge(.9)) + theme(plot.title = element_text(size=22), axis.text=element_text(size=12), axis.title=element_text(size=14,face="bold"))
 dev.off()
-
-
-
-# attempting to plot water quality data 
-Outplant.melted <- melt(OutplantData[1:10,-1], id=c("Habitat", "Site"), variable.name=c("MeanDO", "MeanT"), value.name = "Measurement")
-colnames(OutplantData) <- c("Outplant", "Site", "Habitat", "MeanT", "MeanDO")
-ggplot(OutplantData[1:10,-1], aes=(x=Site, y=))

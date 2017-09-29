@@ -139,7 +139,7 @@ png("Analyses/2017-September_SRM-results/2017-09-16_ANOSIM-TRIFUNCTIONAL0%03d.pn
 plot(Trifunctional.ANOSIM)
 dev.off()
 
-########## Violin plots of proteins found to be significantly different between sites (ANOSIM)
+########## Box plots of proteins found to be significantly different between sites (ANOSIM)
 library(ggplot2)
 levels(data.melted.plus$SITE)
 data.melted.plus$SITE <- factor(data.melted.plus$SITE, levels=c("WB", "CI", "PG", "FB"))

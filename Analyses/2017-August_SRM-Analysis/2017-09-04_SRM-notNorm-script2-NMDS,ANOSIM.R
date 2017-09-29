@@ -150,7 +150,7 @@ points(SRM.nmds.mean.log.samples[c(WB.B.samples),], col=marker[1], pch=8)
 points(SRM.nmds.mean.log.samples[c(WB.E.samples),], col=marker[1], pch=15)
 points(SRM.nmds.mean.log.samples[c(FB.B.samples),], col=marker[4], pch=8)
 points(SRM.nmds.mean.log.samples[c(FB.E.samples),], col=marker[4], pch=15)
-legend=c("Fidalgo Bay", "Port Gamble", 'Case Inlet', "Willapa Bay", "Bare", "Eelgrass"), col=c(marker[4], marker[3], marker[2], marker[1], "black", "black"))
+legend(-.13,0.06, pch=c(rep(16,4), 8, 15), legend=c("Fidalgo Bay", "Port Gamble", 'Case Inlet', "Willapa Bay", "Bare", "Eelgrass"), col=c(marker[4], marker[3], marker[2], marker[1], "black", "black"))
 dev.off()
 
 # Eigenvectors 
